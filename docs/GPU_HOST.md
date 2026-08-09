@@ -88,4 +88,4 @@ Copy that file into this repo as `envs/runpod_healthy_pins.json` (not secrets). 
 
 - Do not expose vLLM to the public internet without a tunnel or auth.
 - Do not install a random “CUDA 12.x” wheel from a blog post. Use the pod’s existing driver + `pip install vllm`.
-- Do not start F1–F5 / F8 until the healthy baseline is recorded.
+- Do not start F1–F6 until the healthy baseline is recorded. F7 and F8 (retrieval) were deleted.

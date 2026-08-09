@@ -33,7 +33,7 @@ Created package `sem-fail-bench`, configs, schemas, catalog compiler (CSV → YA
 
 `scripts/compile_catalog.py` reads Core_Canaries (150) + Held_Out (24) and attaches `SCORER_SPECS` for every ID. Output: `configs/canaries_v3.yaml`.
 
-Scorer types cover all 24 subtypes. Known limitations in `docs/SCORER_CONTRACT.md`. F6/F7 not required to score Cap 5 (context is in-prompt). CUDA/vLLM point releases still unpinned until GPU-host install.
+Scorer types cover all 24 subtypes. Known limitations in `docs/SCORER_CONTRACT.md`. Cap 5 scores in-prompt context (no live retriever). CUDA/vLLM point releases still unpinned until GPU-host install.
 
 `pytest`: 18 passed (catalog invariants, scorer pass/fail pairs, run-record schema, detector metrics). `sfb summary`: 174 items (150 core + 24 held-out). Dedicated `.venv` in this folder so the parent SFB2-162 install is untouched.
 
@@ -83,6 +83,6 @@ Expanded `README.md` § Status into the actual run order: catalog freeze → pro
 
 Wrote `docs/PASS1_CANARY_FIX_REVIEW.docx`. Classifies all 21 strict fails: A scorer, B design/expected, C true fail keep. Does not start 20× or faults. Flags SFC-097 as the safety-gate blocker.
 
-## 2026-08-09 — Step 12: drop retrieval faults F6/F7
+## 2026-08-09 — Step 12: drop retrieval faults F7 and F8
 
-Deleted F6/F7 from `configs/faults.yaml` (pptx F7/F8: stale retrieval + embedding↔index). No reject-path — they are simply not in the fault list. Cap 5 canaries and F8 LoRA stay.
+Pptx numbering: delete **F7** (stale retrieval snapshot) and **F8** (embedding↔index). Keep **F6** LoRA. Cap 5 canaries stay. `configs/faults.yaml` is F1–F6 only.

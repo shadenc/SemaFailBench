@@ -29,7 +29,7 @@ Machine-readable export (every sheet):
 
 Those remain historical sources. Prompts, expected behaviors, and subtype names for code come only from v3 CSV.
 
-## Fault IDs (v2 numbering)
+## Fault IDs (pptx numbering)
 
 | ID | Fault | This milestone |
 |---|---|---|
@@ -38,11 +38,11 @@ Those remain historical sources. Prompts, expected behaviors, and subtype names 
 | F3 | Tokenizer–checkpoint mismatch | core |
 | F4 | Chat-template mismatch | core |
 | F5 | Decoding-config drift | core |
-| F8 | Wrong / stale LoRA adapter | core |
+| F6 | Wrong / stale LoRA adapter | core |
 
-**Deleted from this repo:** F6 stale retrieval + F7 embedding↔index (pptx F7/F8). No live RAG. Cap 5 canaries stay (context in the prompt). Week-1 F01–F11 numbering is **not** used in code.
+**Deleted:** F7 stale retrieval snapshot + F8 embedding↔index mismatch. No live RAG. Cap 5 canaries stay (context in the prompt). Week-1 F01–F11 numbering is **not** used in code.
 
-Fault→canary mappings in the Excel `Faults Potentially Sensitive To` column are **hypotheses**, not empirical claims. Stored as metadata only. F6/F7 strings there are historical; they are not injectable faults.
+Excel `Faults Potentially Sensitive To` used older v2 IDs (LoRA as F8). Compile remaps that metadata to pptx IDs (LoRA → F6) and drops F7/F8.
 
 ## Capabilities / subtypes (v3)
 

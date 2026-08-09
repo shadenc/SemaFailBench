@@ -1,5 +1,6 @@
-# Injectable faults only: F1–F5 + F8 (LoRA).
-# Retrieval faults (pptx F7/F8 = old code F6/F7) were deleted — no live RAG.
+# Pptx numbering. Injectable: F1–F6 only.
+# F6 = Wrong / stale LoRA adapter.
+# F7 / F8 (stale retrieval snapshot + embedding↔index mismatch) were deleted — no live RAG.
 # Cap 5 canaries stay; context is in the prompt.
 # Not Week-1 F01–F11 numbering.
 suite_version: v3-frozen
@@ -46,7 +47,7 @@ faults:
     injection: Change server-side defaults (e.g. temperature 0.7 → 1.4 or drop stop strings) without a client-visible API change.
     healthy_artifact: temperature 0 deterministic / 0.7+top_p 0.9 stochastic
     expected_infra: flat
-  F8:
+  F6:
     name: Wrong / stale LoRA adapter
     family: adaptation
     rank: core

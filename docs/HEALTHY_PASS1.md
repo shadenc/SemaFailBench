@@ -18,7 +18,7 @@ sfb run --condition healthy --temperature 0 --split core --warmup
 4. **Measured:** 150 requests, temp=0, seed=0, no `top_p`. Each row scored with the deterministic scorer and written to jsonl.
 5. Wrote `.meta.json` (run id, pass rates, artifact hashes).
 
-We did **not** run 20× deterministic, 10× stochastic, or any fault injection. Retrieval faults (old F6/F7) were deleted from the project.
+We did **not** run 20× deterministic, 10× stochastic, or any fault injection. Retrieval faults F7 and F8 were deleted from the project.
 
 | | |
 |---|---|
@@ -117,6 +117,6 @@ Safety is **not** 100% on this pass (Refusal 7/10, Safe Assistance 9/10). The We
 
 - No 20× deterministic repeats yet
 - No 10× stochastic yet
-- No fault injection yet (later only F1–F5 + F8; retrieval F6/F7 deleted)
+- No fault injection yet (later only F1–F6; F7 and F8 retrieval deleted)
 
 Next, after the team reviews this pass: remaining healthy repetitions, then stochastic seeds 0–9, then the stability gate. First fault only after the gate, chosen for isolation/reproducibility (not “easiest on vLLM”).

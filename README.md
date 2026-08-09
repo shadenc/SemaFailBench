@@ -4,7 +4,7 @@ Silent semantic failures in LLM serving: the API stays up, GPU/latency look heal
 
 **Catalog:** 150 core canaries (`SFC-*`) + 24 held-out (`SFH-*`).  
 **Model:** Qwen2.5-7B-Instruct. **This pod:** 1× RTX 5090 (not 2×).  
-**Faults later:** F1–F5 + F8 only. Retrieval faults (old F6/F7) were deleted. Cap 5 canaries stay.
+**Faults later:** F1–F6 only (F6 = LoRA). **Deleted:** F7 and F8 (retrieval). Cap 5 canaries stay.
 
 ---
 

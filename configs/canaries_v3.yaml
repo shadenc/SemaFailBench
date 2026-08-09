@@ -10,7 +10,7 @@ notes:
 - Scorer dicts are explicit contracts compiled from Expected Behavior + Prompt.
 - Fault mappings on core items are hypothesized only, not empirical.
 - Cap 5 items embed context in the prompt; no live retriever is required to score.
-- Retrieval faults (old F6/F7) were deleted. Cap 5 stays; context is in-prompt.
+- Retrieval faults F7/F8 were deleted. F6 is LoRA. Cap 5 stays; context is in-prompt.
 canaries:
 - id: SFC-001
   split: core
@@ -32,7 +32,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-001, unchanged.
@@ -62,7 +62,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-002, unchanged.
@@ -92,7 +92,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-003, unchanged.
@@ -122,7 +122,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-004, unchanged.
@@ -153,7 +153,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-005 to remove the compound sentence-count+word-count condition (Problem A).
@@ -183,7 +183,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-006, unchanged.
@@ -216,7 +216,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-007, unchanged.
@@ -247,7 +247,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-008, unchanged.
@@ -282,7 +282,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-009, unchanged.
@@ -314,7 +314,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-010 to remove the dual keyword-frequency condition (Problem A).
@@ -344,7 +344,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-011, unchanged.
@@ -380,7 +380,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-012, unchanged.
@@ -412,7 +412,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-013, unchanged.
@@ -443,7 +443,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-014, unchanged.
@@ -473,7 +473,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-015, unchanged.
@@ -505,7 +505,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-016, unchanged.
@@ -536,7 +536,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-017, unchanged.
@@ -572,7 +572,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-018's JSON-envelope prompt, which tested Capability 2 content under a Capability 1 label
@@ -604,7 +604,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-019, unchanged.
@@ -635,7 +635,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-020, unchanged; explicitly distinguished from the genuine compounds at SFR-005/SFR-010.
@@ -667,7 +667,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-021, unchanged.
@@ -703,7 +703,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-022, unchanged.
@@ -735,7 +735,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-023 to remove an unverifiable, no-ground-truth factual sub-question (Determinism Issue).
@@ -772,7 +772,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-024 to remove the compound language-plus-sentence-count condition (Problem A).
@@ -801,7 +801,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-025, unchanged.
@@ -831,7 +831,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-026, unchanged.
@@ -863,7 +863,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-027, unchanged.
@@ -904,7 +904,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-028, unchanged.
@@ -941,7 +941,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-029, unchanged.
@@ -989,7 +989,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-030 to replace a free-form-explanation scorer with a deterministic fixed-line match
@@ -1035,7 +1035,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-031, unchanged.
@@ -1077,7 +1077,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-032, unchanged.
@@ -1119,7 +1119,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-033, unchanged.
@@ -1165,7 +1165,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-034, unchanged.
@@ -1206,7 +1206,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-035, unchanged.
@@ -1260,7 +1260,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-036, unchanged.
@@ -1311,7 +1311,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-037, unchanged.
@@ -1362,7 +1362,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-038, unchanged.
@@ -1417,7 +1417,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-039, unchanged.
@@ -1467,7 +1467,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-040, unchanged.
@@ -1526,7 +1526,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-041, unchanged.
@@ -1563,7 +1563,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-042, unchanged.
@@ -1600,7 +1600,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-043, unchanged.
@@ -1639,7 +1639,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-044, unchanged.
@@ -1681,7 +1681,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-045, unchanged.
@@ -1721,7 +1721,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-046, unchanged.
@@ -1766,7 +1766,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Rewritten from SFR-047 to remove an unrelated flat-integer field that was not itself an enum check (Problem
@@ -1810,7 +1810,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-048, unchanged.
@@ -1852,7 +1852,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-049, unchanged.
@@ -1897,7 +1897,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-050, unchanged.
@@ -1938,7 +1938,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-051, unchanged.
@@ -1976,7 +1976,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-052, unchanged.
@@ -2015,7 +2015,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-053, unchanged.
@@ -2054,7 +2054,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-054, unchanged.
@@ -2092,7 +2092,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-055, unchanged.
@@ -2131,7 +2131,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-056, unchanged.
@@ -2175,7 +2175,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-057, unchanged.
@@ -2220,7 +2220,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-058, unchanged.
@@ -2257,7 +2257,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-059, unchanged.
@@ -2304,7 +2304,7 @@ canaries:
   - F2
   - F4
   - F5
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F1 (quantization), F2 (checkpoint/version
     regression), F4 (chat-template mismatch), F5 (decoding-config drift), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-060, unchanged.
@@ -2346,7 +2346,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-061, unchanged.
@@ -2375,7 +2375,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-063, unchanged.
@@ -2405,7 +2405,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-066, unchanged.
@@ -2434,7 +2434,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-067, unchanged.
@@ -2464,7 +2464,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-068, unchanged.
@@ -2494,7 +2494,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Reclassified from Common Fact Recall to Numerical Fact Recall; prompt content unchanged.
@@ -2523,7 +2523,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-069's 2-hours-to-minutes computation with a direct, non-computed standardized fact.
@@ -2551,7 +2551,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-070, unchanged.
@@ -2580,7 +2580,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Reclassified from Common Fact Recall to Numerical Fact Recall; prompt content unchanged.
@@ -2608,7 +2608,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Reclassified from Common Fact Recall to Numerical Fact Recall; prompt content unchanged.
@@ -2636,7 +2636,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-071, unchanged.
@@ -2664,7 +2664,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-072, unchanged.
@@ -2693,7 +2693,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-073's 3-km-to-meters computation with a direct, non-computed standardized definition.
@@ -2722,7 +2722,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-074's square-root computation with a direct physical-constant fact.
@@ -2750,7 +2750,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-075, unchanged.
@@ -2778,7 +2778,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-076, unchanged.
@@ -2806,7 +2806,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-077, unchanged.
@@ -2836,7 +2836,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-078, unchanged.
@@ -2867,7 +2867,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-079, unchanged.
@@ -2896,7 +2896,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-080, unchanged.
@@ -2926,7 +2926,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-081, unchanged.
@@ -2956,7 +2956,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-082, unchanged.
@@ -2985,7 +2985,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-083, unchanged.
@@ -3015,7 +3015,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-084, unchanged.
@@ -3041,7 +3041,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-085, unchanged.
@@ -3067,7 +3067,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-086, unchanged.
@@ -3093,7 +3093,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-087, unchanged.
@@ -3119,7 +3119,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-088, unchanged.
@@ -3145,7 +3145,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-089, unchanged.
@@ -3171,7 +3171,7 @@ canaries:
   hypothesized_faults:
   - F2
   - F3
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-090, unchanged.
@@ -3199,7 +3199,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-091, unchanged.
@@ -3228,7 +3228,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-092, unchanged.
@@ -3255,7 +3255,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-093, unchanged; thematic thinness disclosed rather than silently kept.
@@ -3285,7 +3285,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-094, unchanged.
@@ -3311,7 +3311,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-095, unchanged.
@@ -3346,7 +3346,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-096, unchanged.
@@ -3372,7 +3372,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-097, unchanged.
@@ -3404,7 +3404,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-098, unchanged.
@@ -3433,7 +3433,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-099, unchanged.
@@ -3459,7 +3459,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-100, unchanged.
@@ -3495,7 +3495,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-101's tone-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3544,7 +3544,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-102's tone-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3592,7 +3592,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-103's tone-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3639,7 +3639,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-104's tone-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3687,7 +3687,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-105's tone-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3731,7 +3731,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-106, unchanged.
@@ -3775,7 +3775,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-107, unchanged.
@@ -3821,7 +3821,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-108's tone-only prompt with a genuine, harder safety/alignment-relevant assistance test.
@@ -3870,7 +3870,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Modified from SFR-109 to drop a tone qualifier that risked re-introducing Problem D.
@@ -3918,7 +3918,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-110's tone-and-length-only prompt with a genuine safety/alignment-relevant assistance test.
@@ -3968,7 +3968,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-111, unchanged; retained as the one genuinely non-redundant fairness example (Problem E).
@@ -4002,7 +4002,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-112, unchanged.
@@ -4032,7 +4032,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-113's nationality-axis ambiguous-stereotype probe with a benign-intent cybersecurity item.
@@ -4062,7 +4062,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-114's disambiguated nationality item with the malicious-intent cybersecurity counterpart.
@@ -4091,7 +4091,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-115, unchanged; retained as genuinely non-redundant (Problem E).
@@ -4120,7 +4120,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-116's name-only demographic-consistency probe with a benign-intent locksmith item.
@@ -4151,7 +4151,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-117's paired demographic-consistency item with the malicious-intent lock-mechanism counterpart.
@@ -4180,7 +4180,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-118's geography/class ambiguous-stereotype probe with a benign-intent phishing-awareness
@@ -4210,7 +4210,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Replaces SFR-119's age-axis ambiguous-stereotype probe with the malicious-intent phishing-facilitation
@@ -4240,7 +4240,7 @@ canaries:
   - F2
   - F3
   - F4
-  - F8
+  - F6
   hypothesized_faults_raw: Hypothesized sensitivity (design-basis, not empirically validated) -- F2 (checkpoint/version regression),
     F3 (tokenizer-checkpoint mismatch), F4 (chat-template mismatch), F8 (stale/wrong LoRA adapter)
   source_rationale: Original SFR-120, unchanged; emphasis reframed as a policy/intent item rather than a fairness item (Problem

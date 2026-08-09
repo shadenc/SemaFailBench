@@ -24,6 +24,15 @@ from sem_fail_bench.scorer_specs import (  # noqa: E402
 )
 
 FAULT_RE = re.compile(r"\bF[1-8]\b")
+# Pptx IDs: F6=LoRA. Excel v2 text used F8=LoRA and F6/F7=retrieval (deleted).
+_PPTX_FAULT_MAP = {
+    "F1": "F1",
+    "F2": "F2",
+    "F3": "F3",
+    "F4": "F4",
+    "F5": "F5",
+    "F8": "F6",
+}
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -32,7 +41,8 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def _hypothesized_faults(text: str) -> list[str]:
-    return sorted(set(FAULT_RE.findall(text or "")))
+    found = set(FAULT_RE.findall(text or ""))
+    return sorted({_PPTX_FAULT_MAP[fid] for fid in found if fid in _PPTX_FAULT_MAP})
 
 
 def _item_from_core(row: dict[str, str]) -> dict:
@@ -123,7 +133,7 @@ def main() -> int:
             "Scorer dicts are explicit contracts compiled from Expected Behavior + Prompt.",
             "Fault mappings on core items are hypothesized only, not empirical.",
             "Cap 5 items embed context in the prompt; no live retriever is required to score.",
-            "Retrieval faults (old F6/F7) were deleted. Cap 5 stays; context is in-prompt.",
+            "Retrieval faults F7/F8 were deleted. F6 is LoRA. Cap 5 stays; context is in-prompt.",
         ],
         "canaries": canaries,
     }

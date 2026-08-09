@@ -53,7 +53,9 @@ def test_hypothesized_faults_are_metadata_only():
 
 def test_fault_and_serving_configs():
     faults = load_faults()["faults"]
-    assert set(faults) == {"F1", "F2", "F3", "F4", "F5", "F8"}
+    assert set(faults) == {"F1", "F2", "F3", "F4", "F5", "F6"}
+    core = [c for c in load_canaries()["canaries"] if c["split"] == "core"]
+    assert all("F7" not in c["hypothesized_faults"] and "F8" not in c["hypothesized_faults"] for c in core)
     serving = load_serving_config()
     assert serving["model"]["repo"] == "Qwen/Qwen2.5-7B-Instruct"
     assert serving["tensor_parallel_size"] == 1
