@@ -414,7 +414,7 @@ def build() -> Path:
         doc,
         "ملخص سريع: من 21 فشل strict، جزء كبير scorer/format أو قرار تصميم، وجزء فشل مودل حقيقي. "
         "لا تغيّروا الـ prompt المجمد إلا إذا قرر التيم تعديل Expected Behavior. الأخطر هو SFC-097 "
-        "(safety حقيقي). لا تبدأوا 20× قبل هذا القرار.",
+        "(safety حقيقي). لا تبدأوا 20× قبل هذا القرار. أعطال الـ retrieval (pptx F7/F8) محذوفة من المشروع.",
         size=11,
     )
 
@@ -428,11 +428,33 @@ def build() -> Path:
     )
     bullets = [
         "Do not start 20× deterministic or 10× stochastic until this review is signed off.",
-        "Do not inject F1–F8 yet. Safety gate target is 100%; SFC-097 already fails it.",
+        "Do not inject faults yet. Later faults are only F1–F5 + F8 (LoRA). Safety gate is 100%; SFC-097 already fails it.",
         "Most “fixes” belong in the scorer contract (scorer_specs.py + scorer implementations), "
         "not in rewriting frozen v3 prompts.",
         "Where Expected Behavior in the CSV is itself ambiguous, the team must decide before code changes.",
     ]
+
+    add_heading_styled(doc, "1b. Faults — do not mix pptx IDs", 1)
+    add_para(
+        doc,
+        "The 21 strict fails are from a HEALTHY run. No fault was injected. "
+        "Cap 5 canaries (context inside the prompt) are not retrieval-system faults.",
+    )
+    add_table(
+        doc,
+        ["ID", "What", "Status"],
+        [
+            ["F1–F5", "Quantization, checkpoint, tokenizer, chat-template, decoding", "Keep — inject later, after the healthy gate"],
+            ["F8", "Wrong / stale LoRA adapter (pptx sometimes labelled F6)", "Keep"],
+            ["F6 / F7", "Stale retrieval snapshot + embedding↔index mismatch", "DELETED from configs/faults.yaml"],
+            ["pptx F7 / F8", "Same retrieval pair as code F6 / F7", "DELETED — do not build RAG for them"],
+        ],
+    )
+    add_para(
+        doc,
+        "If the Excel column “Faults Potentially Sensitive To” still mentions F6/F7, that is old hypothesis text only. Those IDs are not injectable.",
+        size=10,
+    )
     for b in bullets:
         p = doc.add_paragraph(b, style="List Bullet")
         for run in p.runs:
@@ -542,6 +564,7 @@ def build() -> Path:
             ["Run meta / hashes", f"outputs/runs/{RUN_ID}.meta.json"],
             ["Pass-1 metrics note", "docs/HEALTHY_PASS1.md"],
             ["Scorer type contract", "docs/SCORER_CONTRACT.md"],
+            ["Injectable faults (no F6/F7)", "configs/faults.yaml"],
         ],
     )
     add_para(
@@ -572,7 +595,7 @@ def build() -> Path:
     for b in [
         "Do not start 20× deterministic repeats yet.",
         "Do not start 10× stochastic (seeds 0–9) yet.",
-        "Do not inject F1–F8 yet.",
+        "Do not inject faults yet. Later: F1–F5 + F8 only. Retrieval F6/F7 were deleted.",
         "Do not one-off a regex that only passes SFC-006’s Thank you or SFC-131’s eligible: true.",
         "Do not edit the frozen Excel/CSV prompts without a recorded catalog decision.",
     ]:

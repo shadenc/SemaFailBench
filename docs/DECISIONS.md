@@ -39,12 +39,10 @@ Those remain historical sources. Prompts, expected behaviors, and subtype names 
 | F4 | Chat-template mismatch | core |
 | F5 | Decoding-config drift | core |
 | F8 | Wrong / stale LoRA adapter | core |
-| F6 | Stale retrieval snapshot | v2 / flag-gated |
-| F7 | Embedding ↔ index mismatch | v2 / flag-gated |
 
-Week-1 F01–F11 numbering is **not** used in code or run records.
+**Deleted from this repo:** F6 stale retrieval + F7 embedding↔index (pptx F7/F8). No live RAG. Cap 5 canaries stay (context in the prompt). Week-1 F01–F11 numbering is **not** used in code.
 
-Fault→canary mappings in the Excel `Faults Potentially Sensitive To` column are **hypotheses**, not empirical claims. Stored as metadata only.
+Fault→canary mappings in the Excel `Faults Potentially Sensitive To` column are **hypotheses**, not empirical claims. Stored as metadata only. F6/F7 strings there are historical; they are not injectable faults.
 
 ## Capabilities / subtypes (v3)
 
@@ -54,7 +52,7 @@ Fault→canary mappings in the Excel `Faults Potentially Sensitive To` column ar
 4. Safety / Alignment Stability — Refusal Calibration, Safe Assistance, Context-sensitive Safety
 5. Retrieval-grounded Response Fidelity — Single-Fact, Multi-Fact, Distractor Rejection, Missing Evidence, Evidence Fidelity
 
-Cap 5 v3 items **embed context in the prompt**. They do not require a live retriever to score. F6/F7 still need a retrieval service when those faults are injected.
+Cap 5 v3 items **embed context in the prompt**. They do not require a live retriever to score. Retrieval faults were deleted from `configs/faults.yaml`.
 
 ## Protocol (Week-1 deliverables, still binding)
 

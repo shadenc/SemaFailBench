@@ -123,7 +123,7 @@ def main() -> int:
             "Scorer dicts are explicit contracts compiled from Expected Behavior + Prompt.",
             "Fault mappings on core items are hypothesized only, not empirical.",
             "Cap 5 items embed context in the prompt; no live retriever is required to score.",
-            "F6/F7 RAG injection remains flag-gated and is not required for this catalog.",
+            "Retrieval faults (old F6/F7) were deleted. Cap 5 stays; context is in-prompt.",
         ],
         "canaries": canaries,
     }

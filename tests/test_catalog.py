@@ -53,8 +53,7 @@ def test_hypothesized_faults_are_metadata_only():
 
 def test_fault_and_serving_configs():
     faults = load_faults()["faults"]
-    assert set(faults) == {"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"}
-    assert faults["F6"]["rank"] == "v2"
+    assert set(faults) == {"F1", "F2", "F3", "F4", "F5", "F8"}
     serving = load_serving_config()
     assert serving["model"]["repo"] == "Qwen/Qwen2.5-7B-Instruct"
     assert serving["tensor_parallel_size"] == 1

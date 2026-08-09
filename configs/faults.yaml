@@ -1,4 +1,7 @@
-# v2 fault numbering (pptx + presenting.docx). Not Week-1 F01–F11.
+# Injectable faults only: F1–F5 + F8 (LoRA).
+# Retrieval faults (pptx F7/F8 = old code F6/F7) were deleted — no live RAG.
+# Cap 5 canaries stay; context is in the prompt.
+# Not Week-1 F01–F11 numbering.
 suite_version: v3-frozen
 model: Qwen/Qwen2.5-7B-Instruct
 
@@ -43,22 +46,6 @@ faults:
     injection: Change server-side defaults (e.g. temperature 0.7 → 1.4 or drop stop strings) without a client-visible API change.
     healthy_artifact: temperature 0 deterministic / 0.7+top_p 0.9 stochastic
     expected_infra: flat
-  F6:
-    name: Stale retrieval snapshot / version drift
-    family: retrieval
-    rank: v2
-    vllm_feasible: true
-    injection: Keep serving rag_corpus_v1 after source of truth moves to v2.
-    healthy_artifact: data/rag_corpus_v1.jsonl index
-    expected_infra: flat
-  F7:
-    name: Embedding model ↔ vector index mismatch
-    family: retrieval-representation
-    rank: v2
-    vllm_feasible: true
-    injection: Query with a different embedding model/revision than the one used to build the index.
-    healthy_artifact: BAAI/bge-m3, revision pinned at download time
-    expected_infra: flat on the generation server
   F8:
     name: Wrong / stale LoRA adapter
     family: adaptation

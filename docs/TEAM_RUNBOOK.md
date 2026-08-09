@@ -161,7 +161,7 @@ Run id: `healthy-20260809T181136Z-39a7f8da`
 
 ## 6) Full healthy protocol (before any fault)
 
-From the Week-1 docs. Do not start F1–F8 until this gate passes:
+From the Week-1 docs. Do not start F1–F5 / F8 until this gate passes. Retrieval faults were deleted.
 
 1. 5 discarded warmup requests
 2. **20** deterministic suite runs: `temperature=0`, concurrency=1
@@ -229,7 +229,7 @@ These numbers were **observed**, not chosen in advance. Re-measure on a new pod.
 Coding_part/
   configs/canaries_v3.yaml     ← executable catalog (from CSV)
   configs/serving.yaml         ← serving envelope + pins
-  configs/faults.yaml          ← F1–F8
+  configs/faults.yaml          ← F1–F5 + F8 only
   docs/source_csv/             ← every Excel sheet
   docs/TEAM_RUNBOOK.md         ← this file
   scripts/gpu/                 ← probe / bootstrap / tunnel / ssh_run
@@ -250,7 +250,7 @@ pytest
 ## 10) Do not do this yet
 
 - Do not expose port 8000 on the public internet without a tunnel or auth.
-- Do not start F1–F8 before the healthy baseline and stability gate.
+- Do not start F1–F5 / F8 before the healthy baseline and stability gate.
 - Do not use the Week-1 `CAN-C*` catalog or SFB2-162 as the running suite.
 - Do not invent a CUDA version “that supports Blackwell” from social media.
 - Do not share or commit `~/.ssh/sfb_runpod` (private key).
