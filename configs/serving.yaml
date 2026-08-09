@@ -1,0 +1,59 @@
+# Healthy baseline serving envelope.
+# Exact CUDA / vLLM / Hub commit hashes are recorded at GPU-host install time.
+
+name: semafailbench-healthy-baseline
+suite_version: v3-frozen
+tensor_parallel_size: 1
+dtype: bfloat16
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+
+model:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  tokenizer_repo: Qwen/Qwen2.5-7B-Instruct
+  tokenizer_revision: a09a35458c702b33eeacc393d103063234e8bc28
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+  stochastic:
+    temperature: 0.7
+    top_p: 0.9
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+warmup_requests: 5
+concurrency: 1
+healthy_repeats_deterministic: 20
+healthy_repeats_stochastic: 10
+
+adapter:
+  id: null
+  revision: null
+
+quantization:
+  method: null
+  config_hash: null
+
+retrieval:
+  embedding_model: BAAI/bge-m3
+  embedding_revision: TBD_PIN_AT_DOWNLOAD
+  corpus_version: v1
+  top_k: 3
+  reranker: none
+
+hardware:
+  # Design target remains 2x RTX 5090 (healthy + faulty concurrent).
+  # Observed on RunPod pod qp386qvf6p72gg (2026-08-09): 1x RTX 5090, 32607 MiB,
+  # driver 580.159.03, image CUDA 12.8.1, vLLM 0.26.0, torch 2.11.0+cu130.
+  # Do not claim 2x on this pod.
+  gpus: 1x RTX 5090 (pod qp386qvf6p72gg)
+  allocation:
+    gpu0: healthy server (this pod)
+    gpu1: not present — faulty twin needs a second pod or a later swap on gpu0

@@ -1,0 +1,70 @@
+SemaFailBench — Structured Literature Review Workbook (Third-Pass / Corrected)
+""
+"Scope: This is a second-pass, rigorously re-verified and expanded structured literature"
+"review (50 papers), building on and correcting a first-pass 32-paper version. It should"
+"be described as a ""structured literature review"" — not a formal systematic literature"
+review — per the accuracy requirements governing this project.
+""
+"Every entry's Authors/Year/Venue/URL were checked against arXiv abstract pages, ACL"
+"Anthology, ACM Digital Library, IEEE Xplore/ASE conference records, official conference"
+"proceedings pages, or the Semantic Scholar Graph API. Where a detail could not be"
+"confirmed, the cell reads 'Could not verify', 'Not reported', or 'Not applicable' rather"
+than being guessed.
+""
+Second-pass corrections: nine first-pass entries with unresolved author fields
+"(P009, P013, P016, P019, P022, P023, P025, P030, P032) were re-verified and corrected."
+"One venue claim (P022, 'Findings of ACL 2026') surfaced by an AI-generated search"
+summary could NOT be corroborated against the primary source and was reverted to
+"'arXiv preprint' — an explicit example of the conservative, do-not-invent standard"
+"applied throughout. A second claim (P023, 'IEEE Cloud Summit 2026') WAS independently"
+confirmed from the primary source text and retained/strengthened.
+""
+Eighteen new papers (P033-P050) were added in the second pass to strengthen coverage of:
+"LLM serving systems (vLLM/PagedAttention, SGLang), continuous/production ML monitoring,"
+"RAG/retrieval failure taxonomies, model-routing literature, quantization-safety"
+"convergent evidence, reasoning-stability scoring, and ACL-specific coverage (prompt"
+"sensitivity, structured-output RL, multilingual evaluation, instruction-following"
+robustness). Decoding-configuration-drift-as-a-deployment-fault remains the weakest-
+covered theme even after a dedicated second search — disclosed explicitly rather than
+papered over (see Gap Summary and Search Log).
+""
+Sheets:
+  Literature Matrix       — the 50-paper matrix (30 columns per spec + 2 added columns)
+"  Gap Summary             — per-research-area synthesis (19 areas, evidence-cited)"
+"  Search Log              — 28 queries executed across the first two passes, with dates/outcomes"
+  Closest Competitors     — 15 papers assessed against 12 competitor-analysis questions
+"  Foundational Papers     — top 20 papers ranked by importance, with citation guidance"
+"  ACL Novelty Assessment  — 'why isn't this just X?' for HELM, IFEval, RETAIN, CAIN,"
+"                            PromptRobust, JSONSchemaBench, Watson, AgentOps,"
+"                            FormatSpread, ChatBug, Design Principles, Q-resafe, ProSA"
+  Phase A Change Log     — third-pass correction log (new sheet)
+Known coverage gaps disclosed (see Gap Summary and Search Log for full detail):
+decoding-configuration-drift-as-a-deployment-fault and benign/accidental model-routing
+or checkpoint-version-mismatch faults remain the two weakest-covered fault categories
+after two dedicated search passes — this is disclosed because it directly supports
+(rather than undermines) SemaFailBench's novelty claim.
+""
+Third-pass corrections (this file):
+"Applied directly to the Literature Matrix, Closest Competitors, Foundational Papers,"
+and ACL Novelty Assessment sheets in this workbook: (1) P004 author name corrected
+"from 'Wanqing Ma' to 'Wanqin Ma'; (2) full text of P004, P020, P021, P024, P026, P031,"
+"P035, P038, P040, P046 inspected and Status confirmed 'Read' with Method/Experiments/"
+Limitations detail added; (3) P033 and P034 kept as 'Reading' because their full
+experimental model rosters were not inspected — bibliographic and method-level detail
+"is complete, but this is disclosed as an unresolved field, not silently upgraded;"
+(4) all instances of fixed fault-count language ('11 fault types' / '11 fault
+categories') replaced with cautious non-numeric wording; (5) P024 and P046 confirmed
+"as fully peer-reviewed, published Findings papers and are not listed among"
+weaker-than-peer-reviewed evidence anywhere in this workbook; (6) every 2026-dated
+"paper (P022, P023, P035, P050) re-labeled with one of four explicit publication-status"
+"tiers: arXiv preprint only / accepted, proceedings pending / workshop publication /"
+"peer-reviewed and officially published. See the Phase A Change Log sheet for the full,"
+itemized list of edits with cell-level justification.
+""
+"Scope note: per explicit task instruction, this third pass did NOT repeat the broad"
+literature audit or conduct another broad literature search. Corrections were limited
+"to full-text verification of 12 previously abstract-level-only essential papers,"
+"author-name correction, fixed-fault-count language removal, 2026 publication-status"
+"audit, and consistency edits to the Closest Competitors / Foundational Papers / ACL"
+Novelty Assessment sheets. All other Literature Matrix rows and the Gap Summary /
+Search Log sheets are otherwise unchanged from the second pass.

@@ -1,0 +1,69 @@
+# v2 fault numbering (pptx + presenting.docx). Not Week-1 F01–F11.
+suite_version: v3-frozen
+model: Qwen/Qwen2.5-7B-Instruct
+
+faults:
+  F1:
+    name: Quantization regression
+    family: weight-representation
+    rank: core
+    vllm_feasible: true
+    injection: Swap in an aggressively quantized checkpoint (e.g. 3–4 bit AWQ/GPTQ) while keeping architecture fixed.
+    healthy_artifact: bf16 or validated 8-bit checkpoint, hash-pinned
+    expected_infra: flat or better (lower VRAM / higher throughput)
+  F2:
+    name: Model / checkpoint version regression
+    family: base-model identity
+    rank: core
+    vllm_feasible: true
+    injection: Serve a different Hub revision of the same model id.
+    healthy_artifact: exact Hub commit hash of Qwen2.5-7B-Instruct
+    expected_infra: flat
+  F3:
+    name: Tokenizer–checkpoint mismatch
+    family: preprocessing
+    rank: core
+    vllm_feasible: true
+    injection: Point tokenizer files at a sibling/revision mismatch; weights untouched.
+    healthy_artifact: tokenizer revision identical to model revision
+    expected_infra: flat
+  F4:
+    name: Chat-template mismatch
+    family: prompt-formatting
+    rank: core
+    vllm_feasible: true
+    injection: Load a different family template (e.g. Llama-style on ChatML Qwen).
+    healthy_artifact: official Jinja template from tokenizer_config.json
+    expected_infra: flat
+  F5:
+    name: Decoding / generation configuration drift
+    family: generation-config
+    rank: core
+    vllm_feasible: true
+    injection: Change server-side defaults (e.g. temperature 0.7 → 1.4 or drop stop strings) without a client-visible API change.
+    healthy_artifact: temperature 0 deterministic / 0.7+top_p 0.9 stochastic
+    expected_infra: flat
+  F6:
+    name: Stale retrieval snapshot / version drift
+    family: retrieval
+    rank: v2
+    vllm_feasible: true
+    injection: Keep serving rag_corpus_v1 after source of truth moves to v2.
+    healthy_artifact: data/rag_corpus_v1.jsonl index
+    expected_infra: flat
+  F7:
+    name: Embedding model ↔ vector index mismatch
+    family: retrieval-representation
+    rank: v2
+    vllm_feasible: true
+    injection: Query with a different embedding model/revision than the one used to build the index.
+    healthy_artifact: BAAI/bge-m3, revision pinned at download time
+    expected_infra: flat on the generation server
+  F8:
+    name: Wrong / stale LoRA adapter
+    family: adaptation
+    rank: core
+    vllm_feasible: true
+    injection: Attach a stale or wrong-task LoRA adapter via vLLM multi-LoRA serving.
+    healthy_artifact: no adapter on the Week-1/2 healthy baseline
+    expected_infra: flat

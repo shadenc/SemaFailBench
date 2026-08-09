@@ -1,0 +1,153 @@
+SemaFailBench v3 (FROZEN) -- Coverage Summary
+
+Capability x Count
+Capability,Count
+Capability 1: Instruction-following Fidelity,30.0
+Capability 2: Structured-output Validity & Value Accuracy,30.0
+Capability 3: Factual/Knowledge Recall Accuracy,30.0
+Capability 4: Safety/Alignment Stability,30.0
+Capability 5: Retrieval-grounded Response Fidelity,30.0
+
+TOTAL CORE,150.0
+
+"Verification: Cap1=30, Cap2=30, Cap3=30, Cap4=30, Cap5=30, Total Core=150 (PASS -- all equal 30, total 150)"
+
+Subtype x Count
+Capability,Subtype,Count
+Capability 1: Instruction-following Fidelity,Quantitative Constraint Compliance,5.0
+Capability 1: Instruction-following Fidelity,Keyword Inclusion,5.0
+Capability 1: Instruction-following Fidelity,Keyword Exclusion,5.0
+Capability 1: Instruction-following Fidelity,Structural Formatting Compliance,5.0
+Capability 1: Instruction-following Fidelity,Response Language Fidelity,5.0
+Capability 1: Instruction-following Fidelity,Ordering/Sequencing,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Flat Schema,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Nested Schema,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Type Strictness,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Enum Constraint,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Value Accuracy,5.0
+Capability 2: Structured-output Validity & Value Accuracy,Array Structure,5.0
+Capability 3: Factual/Knowledge Recall Accuracy,Common Fact Recall,5.0
+Capability 3: Factual/Knowledge Recall Accuracy,Numerical Fact Recall,11.0
+Capability 3: Factual/Knowledge Recall Accuracy,Entity Relation Recall,7.0
+Capability 3: Factual/Knowledge Recall Accuracy,Negative Fact/Misconception,7.0
+Capability 4: Safety/Alignment Stability,Refusal Calibration,10.0
+Capability 4: Safety/Alignment Stability,Safe Assistance,10.0
+Capability 4: Safety/Alignment Stability,Context-sensitive Safety,10.0
+Capability 5: Retrieval-grounded Response Fidelity,Single-Fact Grounding,6.0
+Capability 5: Retrieval-grounded Response Fidelity,Multi-Fact Grounding,6.0
+Capability 5: Retrieval-grounded Response Fidelity,Distractor Rejection,6.0
+Capability 5: Retrieval-grounded Response Fidelity,Missing Evidence Detection,6.0
+Capability 5: Retrieval-grounded Response Fidelity,Evidence Fidelity,6.0
+
+Difficulty x Count
+Difficulty,Count
+Easy,42.0
+Moderate,57.0
+Hard,51.0
+
+Capability x Difficulty
+Capability,Difficulty,Count
+Capability 1: Instruction-following Fidelity,Easy,8.0
+Capability 1: Instruction-following Fidelity,Moderate,12.0
+Capability 1: Instruction-following Fidelity,Hard,10.0
+Capability 2: Structured-output Validity & Value Accuracy,Easy,8.0
+Capability 2: Structured-output Validity & Value Accuracy,Moderate,12.0
+Capability 2: Structured-output Validity & Value Accuracy,Hard,10.0
+Capability 3: Factual/Knowledge Recall Accuracy,Easy,9.0
+Capability 3: Factual/Knowledge Recall Accuracy,Moderate,12.0
+Capability 3: Factual/Knowledge Recall Accuracy,Hard,9.0
+Capability 4: Safety/Alignment Stability,Easy,8.0
+Capability 4: Safety/Alignment Stability,Moderate,11.0
+Capability 4: Safety/Alignment Stability,Hard,11.0
+Capability 5: Retrieval-grounded Response Fidelity,Easy,9.0
+Capability 5: Retrieval-grounded Response Fidelity,Moderate,10.0
+Capability 5: Retrieval-grounded Response Fidelity,Hard,11.0
+
+Subtype x Difficulty
+Capability,Subtype,Difficulty,Count
+Capability 1: Instruction-following Fidelity,Quantitative Constraint Compliance,Easy,2.0
+Capability 1: Instruction-following Fidelity,Quantitative Constraint Compliance,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Quantitative Constraint Compliance,Hard,1.0
+Capability 1: Instruction-following Fidelity,Keyword Inclusion,Easy,1.0
+Capability 1: Instruction-following Fidelity,Keyword Inclusion,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Keyword Inclusion,Hard,2.0
+Capability 1: Instruction-following Fidelity,Keyword Exclusion,Easy,1.0
+Capability 1: Instruction-following Fidelity,Keyword Exclusion,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Keyword Exclusion,Hard,2.0
+Capability 1: Instruction-following Fidelity,Structural Formatting Compliance,Easy,1.0
+Capability 1: Instruction-following Fidelity,Structural Formatting Compliance,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Structural Formatting Compliance,Hard,2.0
+Capability 1: Instruction-following Fidelity,Response Language Fidelity,Easy,2.0
+Capability 1: Instruction-following Fidelity,Response Language Fidelity,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Response Language Fidelity,Hard,1.0
+Capability 1: Instruction-following Fidelity,Ordering/Sequencing,Easy,1.0
+Capability 1: Instruction-following Fidelity,Ordering/Sequencing,Moderate,2.0
+Capability 1: Instruction-following Fidelity,Ordering/Sequencing,Hard,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Flat Schema,Easy,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Flat Schema,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Flat Schema,Hard,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Nested Schema,Easy,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Nested Schema,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Nested Schema,Hard,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Type Strictness,Easy,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Type Strictness,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Type Strictness,Hard,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Enum Constraint,Easy,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Enum Constraint,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Enum Constraint,Hard,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Value Accuracy,Easy,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Value Accuracy,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Value Accuracy,Hard,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Array Structure,Easy,1.0
+Capability 2: Structured-output Validity & Value Accuracy,Array Structure,Moderate,2.0
+Capability 2: Structured-output Validity & Value Accuracy,Array Structure,Hard,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Common Fact Recall,Easy,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Common Fact Recall,Moderate,1.0
+Capability 3: Factual/Knowledge Recall Accuracy,Common Fact Recall,Hard,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Numerical Fact Recall,Easy,3.0
+Capability 3: Factual/Knowledge Recall Accuracy,Numerical Fact Recall,Moderate,5.0
+Capability 3: Factual/Knowledge Recall Accuracy,Numerical Fact Recall,Hard,3.0
+Capability 3: Factual/Knowledge Recall Accuracy,Entity Relation Recall,Easy,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Entity Relation Recall,Moderate,3.0
+Capability 3: Factual/Knowledge Recall Accuracy,Entity Relation Recall,Hard,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Negative Fact/Misconception,Easy,2.0
+Capability 3: Factual/Knowledge Recall Accuracy,Negative Fact/Misconception,Moderate,3.0
+Capability 3: Factual/Knowledge Recall Accuracy,Negative Fact/Misconception,Hard,2.0
+Capability 4: Safety/Alignment Stability,Refusal Calibration,Easy,3.0
+Capability 4: Safety/Alignment Stability,Refusal Calibration,Moderate,3.0
+Capability 4: Safety/Alignment Stability,Refusal Calibration,Hard,4.0
+Capability 4: Safety/Alignment Stability,Safe Assistance,Easy,3.0
+Capability 4: Safety/Alignment Stability,Safe Assistance,Moderate,3.0
+Capability 4: Safety/Alignment Stability,Safe Assistance,Hard,4.0
+Capability 4: Safety/Alignment Stability,Context-sensitive Safety,Easy,2.0
+Capability 4: Safety/Alignment Stability,Context-sensitive Safety,Moderate,5.0
+Capability 4: Safety/Alignment Stability,Context-sensitive Safety,Hard,3.0
+Capability 5: Retrieval-grounded Response Fidelity,Single-Fact Grounding,Easy,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Single-Fact Grounding,Moderate,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Single-Fact Grounding,Hard,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Multi-Fact Grounding,Easy,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Multi-Fact Grounding,Moderate,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Multi-Fact Grounding,Hard,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Distractor Rejection,Easy,1.0
+Capability 5: Retrieval-grounded Response Fidelity,Distractor Rejection,Moderate,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Distractor Rejection,Hard,3.0
+Capability 5: Retrieval-grounded Response Fidelity,Missing Evidence Detection,Easy,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Missing Evidence Detection,Moderate,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Missing Evidence Detection,Hard,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Evidence Fidelity,Easy,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Evidence Fidelity,Moderate,2.0
+Capability 5: Retrieval-grounded Response Fidelity,Evidence Fidelity,Hard,2.0
+
+Capability 3 note: Difficulty labels are provisional and require healthy-baseline calibration.
+"All other capabilities: difficulty labels are design labels (semantic-subtlety basis), not yet empirically calibrated."
+
+Round-3 (Final Peer Review) Decision x Count
+Decision,Count
+KEEP,148.0
+REPLACE,2.0
+
+Cumulative Revision Status x Count (current vs. v2)
+Revision Status,Count
+KEEP,121.0
+MODIFIED,26.0
+REPLACED,3.0

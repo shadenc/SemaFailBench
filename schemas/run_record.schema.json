@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semafailbench.local/schemas/run_record.schema.json",
+  "title": "SemaFailBench run record",
+  "type": "object",
+  "required": [
+    "run_id",
+    "timestamp_utc",
+    "condition",
+    "condition_regime",
+    "canary_id",
+    "capability",
+    "subtype",
+    "split",
+    "prompt",
+    "response"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "timestamp_utc": { "type": "string" },
+    "condition": { "type": "string" },
+    "condition_regime": {
+      "type": "string",
+      "enum": ["deterministic", "stochastic"]
+    },
+    "fault_variant": { "type": ["string", "null"] },
+    "severity": { "type": ["string", "null"] },
+    "canary_id": { "type": "string" },
+    "capability": { "type": "string" },
+    "subtype": { "type": "string" },
+    "split": {
+      "type": "string",
+      "enum": ["core", "held_out"]
+    },
+    "prompt_version": { "type": ["string", "null"] },
+    "prompt": { "type": "string" },
+    "response": { "type": ["string", "null"] },
+    "expected_answer": { "type": ["string", "null"] },
+    "strict_pass": { "type": ["boolean", "null"] },
+    "tolerant_pass": { "type": ["boolean", "null"] },
+    "semantic_score": { "type": ["number", "null"] },
+    "score_details": { "type": ["object", "null"] },
+    "retrieved_document_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rag_corpus_version": { "type": ["string", "null"] },
+    "model_id": { "type": ["string", "null"] },
+    "model_revision": { "type": ["string", "null"] },
+    "tokenizer_revision": { "type": ["string", "null"] },
+    "chat_template_hash": { "type": ["string", "null"] },
+    "adapter_id": { "type": ["string", "null"] },
+    "adapter_revision": { "type": ["string", "null"] },
+    "quantization_method": { "type": ["string", "null"] },
+    "quantization_config_hash": { "type": ["string", "null"] },
+    "http_status": { "type": ["integer", "null"] },
+    "latency_ms": { "type": ["number", "null"] },
+    "ttft_ms": { "type": ["number", "null"] },
+    "tokens_per_sec": { "type": ["number", "null"] },
+    "gpu_metrics": { "type": ["object", "null"] },
+    "git_commit_hash": { "type": ["string", "null"] },
+    "config_hash": { "type": ["string", "null"] },
+    "docker_image_digest": { "type": ["string", "null"] },
+    "vllm_version": { "type": ["string", "null"] },
+    "canary_suite_version": { "type": ["string", "null"] },
+    "ground_truth_label": { "type": ["string", "null"] },
+    "temperature": { "type": ["number", "null"] },
+    "seed": { "type": ["integer", "null"] }
+  },
+  "additionalProperties": true
+}

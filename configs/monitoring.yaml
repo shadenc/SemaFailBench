@@ -1,0 +1,21 @@
+# Provisional engineering tolerances until Week-2 empirical envelope exists.
+# These numbers are not paper-ready thresholds.
+
+prometheus: true
+vllm_metrics: /metrics
+gpu: dcgm_or_nvidia_smi
+
+provisional_tolerances:
+  http_error_rate: 0.0
+  e2e_latency_p95_rel: 0.20
+  ttft_p95_rel: 0.20
+  gpu_util_pp: 15
+  gpu_mem_rel: 0.10
+  restart_count: 0
+  kv_cache_rel: 0.20
+  cpu_ram_rel: 0.20
+
+notes:
+  - Any 5xx or restart during a canary window is an incident, not a silent failure.
+  - F1 (quantization) may improve memory/throughput; that still counts as infra-healthy.
+  - Replace this file with p95/MAD bands after 20 deterministic + 10 stochastic healthy windows.

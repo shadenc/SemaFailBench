@@ -1,0 +1,28 @@
+,"SemaFailBench -- Final Canary Dataset (v3, FROZEN)"
+,"This is the final, independently peer-reviewed release, intended to be frozen for healthy-baseline pilot testing and downstream fault-injection experimentation."
+
+,Version history
+,"v1: full re-audit of the original 150-item reconstruction against 8 named methodological problems (compound canaries, JSON leakage into Capability 1, computation masquerading as factual recall, tone-only Safe Assistance, fairness-dominated Context-sensitive Safety, arithmetic-heavy Capability 5, narrow temporal-only Evidence Fidelity)."
+,v2: surgical pass fixing 9 further issues -- residual Capability 1 compound canaries; primary-assertion-vs-fixture clarity in Capability 2; provisional-difficulty labeling for Capability 3; the Refusal-Calibration/Safe-Assistance overlap; residual fairness drift in Context-sensitive Safety; unscored/undefined content; diversity and 'Hard'-overuse re-confirmation.
+,"v3 (this file): an independent, skeptical final peer-review pass across all nine ACL/NeurIPS-style audit criteria (semantic isolation, objective scoreability, capability isolation, prompt quality, prompt diversity, difficulty-label justification, fault-sensitivity honesty, internal consistency, publication readiness). Extremely conservative: 148 of 150 items kept exactly as in v2; 2 items replaced (one intent-contrast pair in Context-sensitive Safety, for a genuine template-repetition diversity concern); the 'Faults Potentially Sensitive To' column across all 150 items was relabeled to explicitly read as a hypothesized, design-basis relationship rather than an empirically validated claim. See the Final_Peer_Review_Audit sheet for the complete prompt-by-prompt record of this pass, and Prompt_Audit for the earlier v1-to-v2 history."
+
+,Freeze determination
+,"YES -- Ready to Freeze. See the accompanying written Final Freeze Report for the full reasoning, remaining (non-blocking) concerns, and assumptions that should be documented in the paper."
+
+,"Finalized taxonomy (frozen, unchanged) -- 5 capabilities, 24 subtypes"
+,"Capability 1 -- Instruction-following Fidelity: Quantitative Constraint Compliance, Keyword Inclusion, Keyword Exclusion, Structural Formatting Compliance, Response Language Fidelity, Ordering/Sequencing."
+,"Capability 2 -- Structured-output Validity & Value Accuracy: Flat Schema, Nested Schema, Type Strictness, Enum Constraint, Value Accuracy, Array Structure."
+,"Capability 3 -- Factual/Knowledge Recall Accuracy: Common Fact Recall, Numerical Fact Recall, Entity Relation Recall, Negative Fact/Misconception."
+,"Capability 4 -- Safety/Alignment Stability: Refusal Calibration, Safe Assistance, Context-sensitive Safety."
+,"Capability 5 -- Retrieval-grounded Response Fidelity: Single-Fact Grounding, Multi-Fact Grounding, Distractor Rejection, Missing Evidence Detection, Evidence Fidelity."
+
+,Fault-sensitivity honesty (Objective 7)
+,"The 'Faults Potentially Sensitive To' column on Core_Canaries is deliberately prefixed 'Hypothesized sensitivity (design-basis, not empirically validated)' for all 150 items. These fault-to-item mappings were derived from mechanism-based reasoning about how each fault class (quantization, checkpoint/version regression, tokenizer mismatch, chat-template mismatch, decoding drift, stale LoRA adapter) could plausibly alter the tested behavior -- they have NOT been experimentally validated by actually injecting these faults. This column is supporting metadata only and does not affect subtype assignment or scoring."
+
+,Capability 3 difficulty labels -- still provisional
+,"Unchanged from v2: every Capability 3 item's Difficulty Status reads 'Provisional -- calibrate using healthy-baseline pass rate.' All other capabilities' difficulty labels are marked 'Design label (semantic-subtlety basis); not yet empirically calibrated' -- i.e., no capability's difficulty labels should be treated as empirically validated prior to a healthy-baseline pilot."
+
+,Total counts (unchanged)
+,"Core_Canaries: 150 items, exactly 30 per capability. Held_Out_Generalization: 24 items, exactly 1 per finalized subtype (unchanged from v2). Final_Peer_Review_Audit: 150 rows (this pass). Prompt_Audit: 150 rows (v1-to-v2 history, carried forward unchanged). Removed_Replaced: full cross-round replacement history (26 rows from Round 1, 3 rows from Round 2, 2 rows from Round 3 -- note SFC-111/SFC-112 appear in both Round 2 and Round 3, since that pair was replaced twice)."
+
+,Generated 2026-08-08.

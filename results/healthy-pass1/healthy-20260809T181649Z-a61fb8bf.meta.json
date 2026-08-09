@@ -1,0 +1,17 @@
+{
+  "run_id": "healthy-20260809T181649Z-a61fb8bf",
+  "condition": "healthy",
+  "condition_regime": "deterministic",
+  "n": 150,
+  "strict_pass_rate": 0.86,
+  "tolerant_pass_rate": 0.8666666666666667,
+  "config_hash": "cae8011eb04b81a3060f01c577ca037a60f1d8914b5662eaa4f6df7c3e99e86c",
+  "artifact_hashes": {
+    "canaries_yaml": "3a89f2bee37436575c84681103caea3b08dc0455df054787d8030180705a0093",
+    "faults_yaml": "68ba48dc27562abc421fdf17faa8587250a0ebc8221c9adf7e7558006a9b34c6",
+    "serving_yaml": "fad1efdb10224845cc3bcbe4d747842bca2edaf67a2365512936f064a29632e9",
+    "extra_objects": "c6449062cd356cdcf9d8d79ccddee2c87bacd52c1be627b7007c83eb80cc4ef4",
+    "bundle": "cae8011eb04b81a3060f01c577ca037a60f1d8914b5662eaa4f6df7c3e99e86c"
+  },
+  "catalog_hash": "6c8b8f5d8d9ad0480e7ffdbbb9f1d2ef7c43c8f6cb31070cf2fb7532d6ec8670"
+}
