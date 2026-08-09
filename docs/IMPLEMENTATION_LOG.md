@@ -81,7 +81,7 @@ Expanded `README.md` § Status into the actual run order: catalog freeze → pro
 
 ## 2026-08-09 — Step 11: pass-1 canary/scorer review (Word, team share)
 
-Wrote `docs/PASS1_CANARY_FIX_REVIEW.docx` (regenerate: `python scripts/write_pass1_canary_review_docx.py`). Classifies all 21 strict fails: A scorer, B design/expected, C true fail keep. Does not start 20× or faults. Flags SFC-097 as the safety-gate blocker.
+Wrote `docs/PASS1_CANARY_FIX_REVIEW.docx`. Classifies all 21 strict fails: A scorer, B design/expected, C true fail keep. Does not start 20× or faults. Flags SFC-097 as the safety-gate blocker.
 
 ## 2026-08-09 — Step 12: drop retrieval faults F6/F7
 
