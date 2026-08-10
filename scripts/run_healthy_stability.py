@@ -10,6 +10,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -23,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sem_fail_bench.paths import REPO_ROOT  # noqa: E402
-from sem_fail_bench.runner import run_suite, write_run, _rate  # noqa: E402
+from sem_fail_bench.client import ServingClient  # noqa: E402
+from sem_fail_bench.runner import run_suite, write_run  # noqa: E402
 
 load_dotenv(REPO_ROOT / ".env", override=True)
 
@@ -117,6 +119,92 @@ def snapshot_gpu(ssh_key: Path, host: str, port: int) -> dict[str, Any]:
     return out
 
 
+def parse_vllm_metrics(base_url: str) -> dict[str, Any]:
+    root = base_url.rstrip("/").removesuffix("/v1")
+    out: dict[str, Any] = {"timestamp_utc": utc_now(), "ok": False}
+    keys_of_interest = (
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting",
+        "vllm:gpu_cache_usage_perc",
+        "vllm:prompt_tokens_total",
+        "vllm:generation_tokens_total",
+        "vllm:time_to_first_token_seconds",
+        "vllm:e2e_request_latency_seconds",
+    )
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            response = client.get(f"{root}/metrics")
+            out["status"] = response.status_code
+            if response.status_code != 200:
+                return out
+            values: dict[str, float] = {}
+            for line in response.text.splitlines():
+                if line.startswith("#") or not line.strip():
+                    continue
+                for key in keys_of_interest:
+                    if line.startswith(key):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            try:
+                                values[key] = float(parts[-1])
+                            except ValueError:
+                                pass
+            out["values"] = values
+            out["ok"] = bool(values)
+    except Exception as exc:  # noqa: BLE001
+        out["error"] = str(exc)
+    return out
+
+
+class GpuSampler:
+    """Poll nvidia-smi on the pod while a run is in flight."""
+
+    def __init__(self, ssh_key: Path, host: str, port: int, interval_s: float = 2.0) -> None:
+        self.ssh_key = ssh_key
+        self.host = host
+        self.port = port
+        self.interval_s = interval_s
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._samples: list[dict[str, float]] = []
+
+    def start(self) -> None:
+        self._samples = []
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def _loop(self) -> None:
+        while not self._stop.is_set():
+            snap = snapshot_gpu(self.ssh_key, self.host, self.port)
+            if snap.get("gpu"):
+                self._samples.append(dict(snap["gpu"]))
+            self._stop.wait(self.interval_s)
+
+    def stop(self) -> dict[str, Any]:
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=10)
+        return summarize_gpu_samples(self._samples, self.interval_s)
+
+
+def summarize_gpu_samples(samples: list[dict[str, float]], interval_s: float | None = None) -> dict[str, Any]:
+    if not samples:
+        return {"ok": False, "n_samples": 0}
+    out: dict[str, Any] = {"ok": True, "n_samples": len(samples)}
+    if interval_s is not None:
+        out["interval_s"] = interval_s
+    for key in ("util_gpu_pct", "util_mem_pct", "memory_used_mib", "temperature_c", "power_w"):
+        vals = [s[key] for s in samples if key in s]
+        if vals:
+            out[f"{key}_max"] = max(vals)
+            out[f"{key}_mean"] = statistics.mean(vals)
+            out[f"{key}_last"] = vals[-1]
+    out["name"] = samples[-1].get("name")
+    out["memory_total_mib"] = samples[-1].get("memory_total_mib")
+    return out
+
+
 def latency_stats(records: list[dict[str, Any]]) -> dict[str, float | None]:
     vals = sorted(float(r["latency_ms"]) for r in records if r.get("latency_ms") is not None)
     if not vals:
@@ -162,8 +250,7 @@ def render_markdown(campaign: dict[str, Any]) -> str:
         "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0",
         "- Run 1: 5 warmup requests discarded, then 120 measured",
         "- Runs 2–20: 120 measured each (no warmup)",
-        "- API + GPU snapshot collected before each run",
-        "- GPU snapshots backfilled post-campaign where live SSH used stale shell TCP env (API snapshots are from run time)",
+        "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
         "",
         "## Campaign summary",
         "",
@@ -178,28 +265,34 @@ def render_markdown(campaign: dict[str, Any]) -> str:
         "",
         "### Per-run pass rates",
         "",
-        "| Run | Run id | Strict | Tolerant | HTTP | Wall s | p50 ms | p95 ms | API ok | GPU ok | GPU util % | GPU mem MiB | Temp °C | Power W |",
-        "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Run | Run id | Strict | Tolerant | HTTP | Wall s | p50 ms | p95 ms | API ok | GPU samples | GPU util max % | GPU mem MiB | Temp max °C | Power max W | KV cache % |",
+        "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for r in runs:
-        gpu_snap = (r.get("infra_before") or {}).get("gpu") or {}
-        gpu = gpu_snap.get("gpu") or {}
+        during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
+        after_snap = (r.get("infra_after") or {}).get("gpu") or {}
+        after = after_snap.get("gpu") or {}
         api = (r.get("infra_before") or {}).get("api") or {}
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        kv = (metrics.get("values") or {}).get("vllm:gpu_cache_usage_perc")
         lat = r.get("latency") or {}
         api_ok = "yes" if api.get("ok") else "no"
-        gpu_ok = "yes" if gpu_snap.get("ok") else "no"
+        util_max = during.get("util_gpu_pct_max", "—")
+        mem = during.get("memory_used_mib_last") or after.get("memory_used_mib", "—")
+        temp_max = during.get("temperature_c_max", "—")
+        power_max = during.get("power_w_max", "—")
+        n_samples = during.get("n_samples", 0)
         lines.append(
             f"| {r['run_index']:02d} | `{r['run_id']}` | {r['strict_pass_rate']:.1%} | "
             f"{r['tolerant_pass_rate']:.1%} | {r['http_200']}/{r['n']} | {r['wall_s']:.0f} | "
             f"{lat.get('p50_ms', 0):.0f} | {lat.get('p95_ms', 0):.0f} | "
-            f"{api_ok} | {gpu_ok} | "
-            f"{gpu.get('util_gpu_pct', '—')} | {gpu.get('memory_used_mib', '—')} | "
-            f"{gpu.get('temperature_c', '—')} | {gpu.get('power_w', '—')} |"
+            f"{api_ok} | {n_samples} | {util_max} | {mem} | {temp_max} | {power_max} | "
+            f"{kv if kv is not None else '—'} |"
         )
     lines.extend(
         [
             "",
-            "### GPU infra envelope (before-run snapshots)",
+            "### GPU infra envelope (during-run peak samples)",
             "",
             "| Metric | min | mean | max |",
             "|---|---:|---:|---:|",
@@ -207,10 +300,10 @@ def render_markdown(campaign: dict[str, Any]) -> str:
     )
     env = campaign.get("gpu_envelope") or {}
     for key, label in [
-        ("util_gpu_pct", "GPU util %"),
-        ("memory_used_mib", "GPU mem used MiB"),
-        ("temperature_c", "Temperature °C"),
-        ("power_w", "Power W"),
+        ("util_gpu_pct_max", "GPU util max %"),
+        ("memory_used_mib_last", "GPU mem MiB (last sample)"),
+        ("temperature_c_max", "Temperature max °C"),
+        ("power_w_max", "Power max W"),
     ]:
         band = env.get(key) or {}
         lines.append(f"| {label} | {band.get('min', '—')} | {band.get('mean', '—')} | {band.get('max', '—')} |")
@@ -229,6 +322,24 @@ def render_markdown(campaign: dict[str, Any]) -> str:
                 "",
             ]
         )
+        during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
+        if during.get("ok"):
+            lines.extend(
+                [
+                    "**GPU during run (2s samples):**",
+                    f"- samples: {during.get('n_samples')} · util max {during.get('util_gpu_pct_max')}% · "
+                    f"mem last {during.get('memory_used_mib_last')} MiB · temp max {during.get('temperature_c_max')}°C · "
+                    f"power max {during.get('power_w_max')} W",
+                    "",
+                ]
+            )
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        if metrics.get("values"):
+            lines.append("**vLLM metrics (post-run):**")
+            for k, v in sorted(metrics["values"].items()):
+                short = k.removeprefix("vllm:")
+                lines.append(f"- `{short}`: {v}")
+            lines.append("")
         caps = r.get("capability_breakdown") or {}
         if caps:
             lines.append("**By capability (strict):**")
@@ -292,10 +403,10 @@ def finalize_campaign(
     strict_rates = [float(r["strict_pass_rate"]) for r in runs]
     tolerant_rates = [float(r["tolerant_pass_rate"]) for r in runs]
     gpu_samples = [
-        ((r.get("infra_before") or {}).get("gpu") or {}).get("gpu")
+        (r.get("infra_during") or {}).get("gpu_sampler")
         for r in runs
     ]
-    gpu_samples = [g for g in gpu_samples if g]
+    gpu_samples = [g for g in gpu_samples if g and g.get("ok")]
 
     canary_pass_counts: dict[str, int] = defaultdict(int)
     for run_entry in runs:
@@ -339,10 +450,10 @@ def finalize_campaign(
         "strict_pass_rate_max": max(strict_rates),
         "tolerant_pass_rate_mean": statistics.mean(tolerant_rates),
         "gpu_envelope": {
-            "util_gpu_pct": gpu_band("util_gpu_pct"),
-            "memory_used_mib": gpu_band("memory_used_mib"),
-            "temperature_c": gpu_band("temperature_c"),
-            "power_w": gpu_band("power_w"),
+            "util_gpu_pct_max": gpu_band("util_gpu_pct_max"),
+            "memory_used_mib_last": gpu_band("memory_used_mib_last"),
+            "temperature_c_max": gpu_band("temperature_c_max"),
+            "power_w_max": gpu_band("power_w_max"),
         },
         "flaky_canaries": flaky,
         "stability_gate": "PASS" if n == repeats and max(strict_rates) - min(strict_rates) <= 0.05 else "REVIEW",
@@ -375,7 +486,7 @@ def main() -> int:
     parser.add_argument("--repeats", type=int, default=20)
     parser.add_argument("--limit", type=int, default=120)
     parser.add_argument("--split", default="core")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "results" / "healthy-stability-120x20")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "results" / "healthy-stability-120x20-v2")
     parser.add_argument(
         "--start-run",
         type=int,
@@ -396,6 +507,8 @@ def main() -> int:
     if args.start_run < 1 or args.start_run > args.repeats:
         print("--start-run must be between 1 and --repeats", file=sys.stderr)
         return 2
+
+    args.out_dir = (REPO_ROOT / args.out_dir).resolve() if not args.out_dir.is_absolute() else args.out_dir.resolve()
 
     base_url = os.getenv("SFB_BASE_URL", "http://127.0.0.1:8000/v1")
     ssh_key = expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod"))
@@ -445,9 +558,9 @@ def main() -> int:
         for run_entry in prior:
             strict_rates.append(float(run_entry["strict_pass_rate"]))
             tolerant_rates.append(float(run_entry["tolerant_pass_rate"]))
-            gpu = (run_entry.get("infra_before") or {}).get("gpu") or {}
-            if gpu.get("gpu"):
-                gpu_samples.append(gpu["gpu"])
+            during = (run_entry.get("infra_during") or {}).get("gpu_sampler") or {}
+            if during.get("ok"):
+                gpu_samples.append(during)
             for fail in run_entry.get("strict_failures") or []:
                 pass  # failures only; rebuild pass counts below
             # Rebuild pass counts from jsonl if present
@@ -463,18 +576,18 @@ def main() -> int:
                             canary_pass_counts[row["canary_id"]] += 1
         print(f"Resuming: loaded {len(prior)} prior runs from {args.out_dir}", flush=True)
 
+    client = ServingClient(timeout=180.0)
+    sampler = GpuSampler(ssh_key, tcp_host, tcp_port, interval_s=2.0) if tcp_host else None
+
     for i in range(args.start_run, args.repeats + 1):
         print(f"\n=== RUN {i}/{args.repeats} ===", flush=True)
-        infra_before = {
-            "api": check_api(base_url),
-            "gpu": snapshot_gpu(ssh_key, tcp_host, tcp_port),
-        }
+        infra_before = {"api": check_api(base_url)}
         if not infra_before["api"].get("ok"):
             print("API down before run; aborting campaign.", file=sys.stderr)
             break
-        if infra_before["gpu"].get("gpu"):
-            gpu_samples.append(infra_before["gpu"]["gpu"])
 
+        if sampler:
+            sampler.start()
         t0 = time.perf_counter()
         try:
             summary = run_suite(
@@ -485,13 +598,18 @@ def main() -> int:
                 limit=args.limit,
                 split=args.split,
                 warmup=(i == 1),
+                client=client,
             )
         except Exception as exc:  # noqa: BLE001
+            if sampler:
+                sampler.stop()
             print(f"  run failed ({exc}); retrying once after API check...", flush=True)
             time.sleep(5)
             if not check_api(base_url).get("ok"):
                 print("API down after failure; aborting campaign.", file=sys.stderr)
                 break
+            if sampler:
+                sampler.start()
             summary = run_suite(
                 condition="healthy",
                 temperature=0.0,
@@ -500,8 +618,24 @@ def main() -> int:
                 limit=args.limit,
                 split=args.split,
                 warmup=False,
+                client=client,
             )
         wall_s = time.perf_counter() - t0
+        during_summary = sampler.stop() if sampler else {"ok": False, "n_samples": 0}
+        infra_during = {"gpu_sampler": during_summary}
+        if during_summary.get("ok"):
+            gpu_samples.append(during_summary)
+            print(
+                f"  gpu during: {during_summary.get('n_samples')} samples · "
+                f"util max {during_summary.get('util_gpu_pct_max')}% · "
+                f"power max {during_summary.get('power_w_max')} W",
+                flush=True,
+            )
+
+        infra_after = {
+            "gpu": snapshot_gpu(ssh_key, tcp_host, tcp_port) if tcp_host else {"ok": False},
+            "vllm_metrics": parse_vllm_metrics(base_url),
+        }
         jsonl_path = write_run(summary)
         meta_src = jsonl_path.with_suffix(".meta.json")
 
@@ -528,6 +662,8 @@ def main() -> int:
             "capability_breakdown": capability_breakdown(records),
             "strict_failures": strict_failures(records),
             "infra_before": infra_before,
+            "infra_during": infra_during,
+            "infra_after": infra_after,
             "artifacts": {
                 "jsonl": str(jsonl_path.relative_to(REPO_ROOT)),
                 "meta": str(meta_src.relative_to(REPO_ROOT)),
@@ -557,31 +693,6 @@ def main() -> int:
     n = campaign["n_completed"]
     if n == 0:
         return 2
-
-    def gpu_band(key: str) -> dict[str, float]:
-        vals = [g[key] for g in gpu_samples if key in g]
-        return {"min": min(vals), "mean": statistics.mean(vals), "max": max(vals)} if vals else {}
-
-    flaky = [(cid, cnt) for cid, cnt in sorted(canary_pass_counts.items()) if 0 < cnt < n]
-    flaky.sort(key=lambda x: (x[1], x[0]))
-
-    campaign.update(
-        {
-            "all_http_200": all(r["http_200"] == r["n"] for r in campaign["runs"]),
-            "strict_pass_rate_mean": statistics.mean(strict_rates),
-            "strict_pass_rate_min": min(strict_rates),
-            "strict_pass_rate_max": max(strict_rates),
-            "tolerant_pass_rate_mean": statistics.mean(tolerant_rates),
-            "gpu_envelope": {
-                "util_gpu_pct": gpu_band("util_gpu_pct"),
-                "memory_used_mib": gpu_band("memory_used_mib"),
-                "temperature_c": gpu_band("temperature_c"),
-                "power_w": gpu_band("power_w"),
-            },
-            "flaky_canaries": flaky,
-            "stability_gate": "PASS" if n == args.repeats and max(strict_rates) - min(strict_rates) <= 0.05 else "REVIEW",
-        }
-    )
 
     finalize_campaign(args.out_dir, args.repeats, pod_id, campaign_id=campaign["campaign_id"])
     print(f"\nWrote {args.out_dir / 'campaign_manifest.json'}")
