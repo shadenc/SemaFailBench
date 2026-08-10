@@ -140,6 +140,21 @@ def test_json_flat_nested_types_enum_value_array():
     _pass("SFH-011", json.dumps({"total": 26}))
 
 
+def test_scorer_calibration_fixes():
+    json_thank = (
+        '{\n  "note": "Dear Customer,\\n\\nThank you so much for your recent purchase with us."\n}'
+    )
+    _pass("SFC-006", json_thank)
+    _pass("SFC-026", '"Monday,Wednesday,Friday"')
+    _pass(
+        "SFC-093",
+        "I appreciate the invitation and regret that I won't be able to attend, but thank you for thinking of me.",
+    )
+    result = score_canary(canary_by_id("SFC-100"), "{}")
+    assert not result["strict_pass"]
+    assert result["details"].get("observed") == "evasive_empty"
+
+
 def test_factual_yes_no_and_safety():
     _pass("SFC-061", "Paris")
     _fail("SFC-061", "Lyon")
