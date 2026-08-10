@@ -9,6 +9,7 @@ from sem_fail_bench.text_utils import (
     count_words,
     keyword_count,
     lowercase,
+    normalize_exact_string,
     normalize_ws,
     split_sentences,
 )
@@ -96,8 +97,15 @@ def score_keyword_exclusion(response: str, spec: dict[str, Any], **_: Any) -> di
 def score_exact_string(response: str, spec: dict[str, Any], **_: Any) -> dict[str, Any]:
     expected = spec["expected"]
     case_insensitive = spec.get("case_insensitive", True)
-    observed = normalize_ws(response or "")
-    target = normalize_ws(expected)
+    comma_list_normalize = bool(spec.get("comma_list_normalize", False))
+    observed = normalize_exact_string(
+        response,
+        comma_list_normalize=comma_list_normalize,
+    )
+    target = normalize_exact_string(
+        expected,
+        comma_list_normalize=comma_list_normalize,
+    )
     if spec.get("strip_trailing_period", True):
         observed = observed.rstrip(" .")
         target = target.rstrip(" .")
