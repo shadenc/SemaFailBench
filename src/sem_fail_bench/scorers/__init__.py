@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from sem_fail_bench.text_utils import unwrap_json_prose
 from sem_fail_bench.scorers.factual import score_factual, score_yes_no
 from sem_fail_bench.scorers.formatting import score_formatting, score_language, score_ordering
 from sem_fail_bench.scorers.grounding import score_grounding, score_missing_evidence
@@ -66,6 +67,8 @@ def _score_spec(spec: dict[str, Any], response: str) -> dict[str, Any]:
 
 def score_canary(canary: dict[str, Any], response: str, **_: Any) -> dict[str, Any]:
     spec = canary.get("scorer") or {}
+    if spec.get("type") != "json":
+        response = unwrap_json_prose(response)
     result = _score_spec(spec, response)
     result["canary_id"] = canary["id"]
     result["scorer_type"] = spec.get("type")
