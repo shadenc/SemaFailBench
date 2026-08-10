@@ -10,4 +10,6 @@ Run id: `healthy-20260810T082058Z-3369eb0d`
 Condition: healthy, deterministic (`temperature=0`, no faults).  
 Strict pass rate: **90.0%** (108/120). Tolerant: **90.8%** (109/120).
 
+**Read first:** `docs/HEALTHY_BASELINE_120.md` (summary + failure table)
+
 Search fails in the jsonl: `"strict_pass": false`
