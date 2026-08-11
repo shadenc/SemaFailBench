@@ -2,6 +2,7 @@
 # From the Mac: PTY-SSH into RunPod and bootstrap the healthy vLLM server.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
 export SFB_RUNPOD_SSH="${SFB_RUNPOD_SSH:-qp386qvf6p72gg-64411ac1@ssh.runpod.io}"
 export SFB_RUNPOD_KEY="${SFB_RUNPOD_KEY:-$HOME/.ssh/sfb_runpod}"
 PUBKEY="$(cat "${SFB_RUNPOD_KEY}.pub")"

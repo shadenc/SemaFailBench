@@ -1,0 +1,17 @@
+{
+  "run_id": "F1-quantization-20260811T145040Z-52c44c2d",
+  "condition": "F1-quantization",
+  "condition_regime": "deterministic",
+  "n": 120,
+  "strict_pass_rate": 0.925,
+  "tolerant_pass_rate": 0.9333333333333333,
+  "config_hash": "930cbec2020c049884800e9574777fdfe683269f95bc9dc44222f24e5c281b69",
+  "artifact_hashes": {
+    "canaries_yaml": "1e8896c9449b17a75a0251713bb13bc17bc86bb2fd0b6666b0fdf34018efedd6",
+    "faults_yaml": "6d37b81e585b7a2db2608e3f28f1f709bd43ab086a3329efa80b3fc3cce47fea",
+    "serving_yaml": "fad1efdb10224845cc3bcbe4d747842bca2edaf67a2365512936f064a29632e9",
+    "extra_objects": "a6c4af675f102f65201d91f85a0e13c8217bb4edc68d2d189e89f271ef41124b",
+    "bundle": "930cbec2020c049884800e9574777fdfe683269f95bc9dc44222f24e5c281b69"
+  },
+  "catalog_hash": "4db3a64fa545e7aca2d21436f1e5af90e4e84da30da5f5cfeb404e810cfc51b3"
+}

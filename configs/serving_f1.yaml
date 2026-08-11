@@ -1,0 +1,46 @@
+# F1 — Quantization regression serving envelope.
+# Same architecture as healthy (Qwen2.5-7B-Instruct); aggressively quantized weights (AWQ 4-bit).
+# Healthy baseline: configs/serving.yaml (bf16 full precision).
+
+name: semafailbench-f1-quantization
+fault_id: F1
+fault_name: Quantization regression
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+
+model:
+  repo: Qwen/Qwen2.5-7B-Instruct-AWQ
+  revision: null  # pin at download time → envs/f1_pins.json on pod
+  tokenizer_repo: Qwen/Qwen2.5-7B-Instruct-AWQ
+  quantization: awq
+
+healthy_reference:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  dtype: bfloat16
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+  stochastic:
+    temperature: 0.7
+    top_p: 0.9
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+warmup_requests: 5
+concurrency: 1
+
+expected_infra:
+  http_error_rate: 0.0
+  restart_count: 0
+  notes:
+    - VRAM should be flat or lower vs healthy bf16 (~30 GiB loaded).
+    - Throughput may be higher; semantic quality may degrade (that is the fault).
