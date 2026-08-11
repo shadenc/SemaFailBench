@@ -327,7 +327,6 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
         "> Compare per-canary jsonl vs healthy v2 in `results/healthy-stability-120x20-v2/`.",
-        "> Prior revision-only F2 attempt (`results/fault-f2-stability-120x20/`, Qwen2.5 @ 52e20a6…) was an **invalid artifact selection** — not evidence that F2 has no effect.",
         "",
         "## Protocol",
         "",
@@ -336,18 +335,75 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
         "- Preflight: one deterministic pass; abort 20× if ineffective",
         "- Run 1: 5 warmup requests discarded, then 120 measured",
         "- Runs 2–20: 120 measured each (no warmup)",
-        "- API health check before each run; GPU sampled every 2s during inference",
+        "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
         "",
-        "## Campaign summary",
-        "",
-        "| | |",
-        "|---|---|",
-        f"| Runs completed | {campaign['n_completed']} / {campaign['n_planned']} |",
-        f"| All HTTP 200 | {campaign['all_http_200']} |",
-        f"| Strict pass rate (mean) | **{campaign['strict_pass_rate_mean']:.1%}** |",
-        f"| Tolerant pass rate (mean) | {campaign['tolerant_pass_rate_mean']:.1%} |",
-        f"| Stability gate | {campaign['stability_gate']} |",
     ]
+    preflight = campaign.get("preflight")
+    if preflight:
+        ev = preflight.get("evaluation") or {}
+        lines.extend(
+            [
+                "## Preflight gate",
+                "",
+                f"**Run id:** `{preflight.get('run_id', '?')}`",
+                f"**Verdict:** {ev.get('verdict', '?')} (effective={ev.get('effective')})",
+                "",
+                "| | |",
+                "|---|---|",
+                f"| Strict pass rate | {preflight.get('strict_pass_rate', 0):.1%} |",
+                f"| Tolerant pass rate | {preflight.get('tolerant_pass_rate', 0):.1%} |",
+                f"| HTTP 200 | {preflight.get('http_200', 0)}/{preflight.get('n', 120)} |",
+                f"| Wall time | {preflight.get('wall_s', 0):.1f} s |",
+                f"| Healthy baseline | {ev.get('healthy_strict_pass_rate', 0):.1%} |",
+                f"| delta_F2 (healthy − F2) | {ev.get('delta_F2', 0):+.1%} |",
+                f"| Canary swaps | {ev.get('canary_swaps', 0)} |",
+                "",
+                "| Direction | Canaries |",
+                "|---|---|",
+                f"| Regressions | {', '.join(ev.get('regressions') or []) or '—'} |",
+                f"| Recoveries | {', '.join(ev.get('recoveries') or []) or '—'} |",
+                f"| Stable failures | {', '.join(ev.get('stable_failures') or []) or '—'} |",
+                "",
+            ]
+        )
+        pf_during = (preflight.get("infra_during") or {}).get("gpu_sampler") or {}
+        if pf_during.get("ok"):
+            util_mean = pf_during.get("util_gpu_pct_mean")
+            util_mean_s = f"{util_mean:.1f}" if isinstance(util_mean, (int, float)) else "—"
+            lines.extend(
+                [
+                    "**GPU during preflight (2s samples):**",
+                    f"- samples: {pf_during.get('n_samples')} · util max {pf_during.get('util_gpu_pct_max')}% · "
+                    f"util mean {util_mean_s}% · "
+                    f"mem last {pf_during.get('memory_used_mib_last')} MiB · temp max {pf_during.get('temperature_c_max')}°C · "
+                    f"power max {pf_during.get('power_w_max')} W",
+                    "",
+                ]
+            )
+        pf_fails = preflight.get("strict_failures") or []
+        if pf_fails:
+            lines.append(f"**Preflight strict failures ({len(pf_fails)}):**")
+            lines.append("")
+            lines.append("| ID | Subtype | Note |")
+            lines.append("|---|---|---|")
+            for f in pf_fails:
+                note = str(f.get("note", "")).replace("|", "/")[:80]
+                lines.append(f"| {f['canary_id']} | {f['subtype']} | {note} |")
+            lines.append("")
+    lines.extend(
+        [
+            "## Campaign summary",
+            "",
+            "| | |",
+            "|---|---|",
+            f"| Runs completed | {campaign['n_completed']} / {campaign['n_planned']} |",
+            f"| All HTTP 200 | {campaign['all_http_200']} |",
+            f"| Strict pass rate (mean) | **{campaign['strict_pass_rate_mean']:.1%}** |",
+            f"| Strict pass rate (min–max) | {campaign['strict_pass_rate_min']:.1%} – {campaign['strict_pass_rate_max']:.1%} |",
+            f"| Tolerant pass rate (mean) | {campaign['tolerant_pass_rate_mean']:.1%} |",
+            f"| Stability gate (≥95% agreement) | {campaign['stability_gate']} |",
+        ]
+    )
     if healthy:
         h = healthy.get("strict_pass_rate_mean", 0)
         delta_f2 = h - campaign["strict_pass_rate_mean"]
@@ -376,18 +432,113 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
             "",
             "### Per-run pass rates",
             "",
-            "| Run | Run id | Strict | Tolerant | HTTP | Wall s | API ok | GPU util max % |",
-            "|---|---|---|---|---|---:|---:|---:|",
+            "| Run | Run id | Strict | Tolerant | HTTP | Wall s | p50 ms | p95 ms | API ok | GPU samples | GPU util max % | GPU mem MiB | Temp max °C | Power max W | KV cache % |",
+            "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for r in runs:
         during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
+        lat = r.get("latency") or {}
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        kv = (metrics.get("values") or {}).get("vllm:gpu_cache_usage_perc")
         api_ok = "yes" if (r.get("infra_before") or {}).get("api", {}).get("ok") else "no"
         lines.append(
             f"| {r['run_index']:02d} | `{r['run_id']}` | {r['strict_pass_rate']:.1%} | "
             f"{r['tolerant_pass_rate']:.1%} | {r['http_200']}/{r['n']} | {r['wall_s']:.0f} | "
-            f"{api_ok} | {during.get('util_gpu_pct_max', '—')} |"
+            f"{lat.get('p50_ms', 0):.0f} | {lat.get('p95_ms', 0):.0f} | "
+            f"{api_ok} | {during.get('n_samples', 0)} | "
+            f"{during.get('util_gpu_pct_max', '—')} | {during.get('memory_used_mib_last', '—')} | "
+            f"{during.get('temperature_c_max', '—')} | {during.get('power_w_max', '—')} | "
+            f"{kv if kv is not None else '—'} |"
         )
+    env = campaign.get("gpu_envelope") or {}
+    lines.extend(
+        [
+            "",
+            "### GPU infra envelope (during-run peak samples)",
+            "",
+            "| Metric | min | mean | max |",
+            "|---|---:|---:|---:|",
+        ]
+    )
+    for key, label in [
+        ("util_gpu_pct_max", "GPU util max %"),
+        ("memory_used_mib_last", "GPU mem MiB (last sample)"),
+        ("temperature_c_max", "Temperature max °C"),
+        ("power_w_max", "Power max W"),
+    ]:
+        band = env.get(key) or {}
+        lines.append(f"| {label} | {band.get('min', '—')} | {band.get('mean', '—')} | {band.get('max', '—')} |")
+    lines.extend(["", "## Per-run details", ""])
+    for r in runs:
+        lines.extend(
+            [
+                f"### Run {r['run_index']:02d} — `{r['run_id']}`",
+                "",
+                "| | |",
+                "|---|---|",
+                f"| Strict | **{r['strict_pass_rate']:.1%}** ({r['strict_pass_n']}/{r['n']}) |",
+                f"| Tolerant | {r['tolerant_pass_rate']:.1%} ({r['tolerant_pass_n']}/{r['n']}) |",
+                f"| HTTP 200 | {r['http_200']}/{r['n']} |",
+                f"| Wall time | {r['wall_s']:.1f} s |",
+                f"| Warmup | {'yes (5 discarded)' if r.get('warmup') else 'no'} |",
+                "",
+            ]
+        )
+        during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
+        if during.get("ok"):
+            util_mean = during.get("util_gpu_pct_mean")
+            util_mean_s = f"{util_mean:.1f}" if isinstance(util_mean, (int, float)) else "—"
+            lines.extend(
+                [
+                    "**GPU during run (2s samples):**",
+                    f"- samples: {during.get('n_samples')} · util max {during.get('util_gpu_pct_max')}% · "
+                    f"util mean {util_mean_s}% · "
+                    f"mem last {during.get('memory_used_mib_last')} MiB · temp max {during.get('temperature_c_max')}°C · "
+                    f"power max {during.get('power_w_max')} W",
+                    "",
+                ]
+            )
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        if metrics.get("values"):
+            lines.append("**vLLM metrics (post-run):**")
+            for k, v in sorted(metrics["values"].items()):
+                short = k.removeprefix("vllm:")
+                lines.append(f"- `{short}`: {v}")
+            lines.append("")
+        caps = r.get("capability_breakdown") or {}
+        if caps:
+            lines.append("**By capability (strict):**")
+            for cap, val in caps.items():
+                short = cap.split(":")[0].replace("Capability ", "Cap ")
+                lines.append(f"- {short}: {val}")
+            lines.append("")
+        fails = r.get("strict_failures") or []
+        if fails:
+            lines.append(f"**Strict failures ({len(fails)}):**")
+            lines.append("")
+            lines.append("| ID | Subtype | Note |")
+            lines.append("|---|---|---|")
+            for f in fails:
+                note = str(f.get("note", "")).replace("|", "/")[:80]
+                lines.append(f"| {f['canary_id']} | {f['subtype']} | {note} |")
+            lines.append("")
+    lines.extend(
+        [
+            "## Canary stability across 20 runs",
+            "",
+            "Canaries that changed strict pass/fail between runs (flaky):",
+            "",
+        ]
+    )
+    flaky = campaign.get("flaky_canaries") or []
+    if flaky:
+        lines.append("| ID | strict pass count / 20 |")
+        lines.append("|---|---:|")
+        for cid, cnt in flaky:
+            lines.append(f"| {cid} | {cnt}/20 |")
+    else:
+        lines.append("_None — all canaries had identical strict outcomes across completed runs._")
     lines.append("")
     return "\n".join(lines)
 
