@@ -57,6 +57,22 @@ def load_healthy_baseline() -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _healthy_f1_delta() -> tuple[list[str], list[str], list[str]]:
+    """Compare healthy v2 run 1 vs F1 run 1 strict outcomes."""
+    healthy_manifest = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "run_01_manifest.json"
+    if not healthy_manifest.exists():
+        return [], [], []
+    h_fails = {f["canary_id"] for f in json.loads(healthy_manifest.read_text())["strict_failures"]}
+    f1_manifest = REPO_ROOT / "results" / "fault-f1-stability-120x20" / "run_01_manifest.json"
+    if not f1_manifest.exists():
+        return sorted(h_fails), [], []
+    f_fails = {f["canary_id"] for f in json.loads(f1_manifest.read_text())["strict_failures"]}
+    regressions = sorted(f_fails - h_fails)  # healthy PASS → F1 FAIL
+    recoveries = sorted(h_fails - f_fails)  # healthy FAIL → F1 PASS
+    stable_fail = sorted(h_fails & f_fails)
+    return regressions, recoveries, stable_fail
+
+
 def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None) -> str:
     runs = campaign["runs"]
     lines = [
@@ -71,13 +87,15 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
         "",
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
+        "> Compare per-canary jsonl under `results/fault-f1-stability-120x20/` vs healthy v2 in `results/healthy-stability-120x20-v2/`.",
+        "",
         "## Protocol",
         "",
         "- Stop healthy bf16 vLLM; serve `Qwen/Qwen2.5-7B-Instruct-AWQ` with `--quantization awq`",
         "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0",
         "- Run 1: 5 warmup requests discarded, then 120 measured",
         "- Runs 2–20: 120 measured each (no warmup)",
-        "- API health check before each run; GPU sampled every 2s **during** inference",
+        "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
         "",
         "## Campaign summary",
         "",
@@ -99,28 +117,56 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
                 f"| Delta vs healthy | {delta:+.1%} |",
             ]
         )
+    regressions, recoveries, stable_fail = _healthy_f1_delta()
+    if regressions or recoveries:
+        lines.extend(
+            [
+                "",
+                "### F1 vs healthy (run 1 strict delta)",
+                "",
+                "Headline pass rate is unchanged; these canaries **swapped** pass/fail vs healthy v2:",
+                "",
+                "| Direction | Canaries |",
+                "|---|---|",
+                f"| Regressions (healthy PASS → F1 FAIL) | {', '.join(regressions) or '—'} |",
+                f"| Recoveries (healthy FAIL → F1 PASS) | {', '.join(recoveries) or '—'} |",
+                f"| Stable strict failures (both) | {', '.join(stable_fail) or '—'} |",
+            ]
+        )
     lines.extend(
         [
             "",
             "### Per-run pass rates",
             "",
-            "| Run | Run id | Strict | Tolerant | HTTP | Wall s | p50 ms | API ok | GPU samples | GPU util max % | GPU mem MiB | Temp max °C | Power max W |",
-            "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            "| Run | Run id | Strict | Tolerant | HTTP | Wall s | p50 ms | p95 ms | API ok | GPU samples | GPU util max % | GPU mem MiB | Temp max °C | Power max W | KV cache % |",
+            "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for r in runs:
         during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
         lat = r.get("latency") or {}
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        kv = (metrics.get("values") or {}).get("vllm:gpu_cache_usage_perc")
         api_ok = "yes" if (r.get("infra_before") or {}).get("api", {}).get("ok") else "no"
         lines.append(
             f"| {r['run_index']:02d} | `{r['run_id']}` | {r['strict_pass_rate']:.1%} | "
             f"{r['tolerant_pass_rate']:.1%} | {r['http_200']}/{r['n']} | {r['wall_s']:.0f} | "
-            f"{lat.get('p50_ms', 0):.0f} | {api_ok} | {during.get('n_samples', 0)} | "
+            f"{lat.get('p50_ms', 0):.0f} | {lat.get('p95_ms', 0):.0f} | "
+            f"{api_ok} | {during.get('n_samples', 0)} | "
             f"{during.get('util_gpu_pct_max', '—')} | {during.get('memory_used_mib_last', '—')} | "
-            f"{during.get('temperature_c_max', '—')} | {during.get('power_w_max', '—')} |"
+            f"{during.get('temperature_c_max', '—')} | {during.get('power_w_max', '—')} | "
+            f"{kv if kv is not None else '—'} |"
         )
     env = campaign.get("gpu_envelope") or {}
-    lines.extend(["", "### GPU infra envelope (during-run peak samples)", "", "| Metric | min | mean | max |", "|---|---:|---:|---:|"])
+    lines.extend(
+        [
+            "",
+            "### GPU infra envelope (during-run peak samples)",
+            "",
+            "| Metric | min | mean | max |",
+            "|---|---:|---:|---:|",
+        ]
+    )
     for key, label in [
         ("util_gpu_pct_max", "GPU util max %"),
         ("memory_used_mib_last", "GPU mem MiB (last sample)"),
@@ -129,10 +175,72 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
     ]:
         band = env.get(key) or {}
         lines.append(f"| {label} | {band.get('min', '—')} | {band.get('mean', '—')} | {band.get('max', '—')} |")
+    lines.extend(["", "## Per-run details", ""])
+    for r in runs:
+        lines.extend(
+            [
+                f"### Run {r['run_index']:02d} — `{r['run_id']}`",
+                "",
+                "| | |",
+                "|---|---|",
+                f"| Strict | **{r['strict_pass_rate']:.1%}** ({r['strict_pass_n']}/{r['n']}) |",
+                f"| Tolerant | {r['tolerant_pass_rate']:.1%} ({r['tolerant_pass_n']}/{r['n']}) |",
+                f"| HTTP 200 | {r['http_200']}/{r['n']} |",
+                f"| Wall time | {r['wall_s']:.1f} s |",
+                f"| Warmup | {'yes (5 discarded)' if r.get('warmup') else 'no'} |",
+                "",
+            ]
+        )
+        during = (r.get("infra_during") or {}).get("gpu_sampler") or {}
+        if during.get("ok"):
+            util_mean = during.get("util_gpu_pct_mean")
+            util_mean_s = f"{util_mean:.1f}" if isinstance(util_mean, (int, float)) else "—"
+            lines.extend(
+                [
+                    "**GPU during run (2s samples):**",
+                    f"- samples: {during.get('n_samples')} · util max {during.get('util_gpu_pct_max')}% · "
+                    f"util mean {util_mean_s}% · "
+                    f"mem last {during.get('memory_used_mib_last')} MiB · temp max {during.get('temperature_c_max')}°C · "
+                    f"power max {during.get('power_w_max')} W",
+                    "",
+                ]
+            )
+        metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
+        if metrics.get("values"):
+            lines.append("**vLLM metrics (post-run):**")
+            for k, v in sorted(metrics["values"].items()):
+                short = k.removeprefix("vllm:")
+                lines.append(f"- `{short}`: {v}")
+            lines.append("")
+        caps = r.get("capability_breakdown") or {}
+        if caps:
+            lines.append("**By capability (strict):**")
+            for cap, val in caps.items():
+                short = cap.split(":")[0].replace("Capability ", "Cap ")
+                lines.append(f"- {short}: {val}")
+            lines.append("")
+        fails = r.get("strict_failures") or []
+        if fails:
+            lines.append(f"**Strict failures ({len(fails)}):**")
+            lines.append("")
+            lines.append("| ID | Subtype | Note |")
+            lines.append("|---|---|---|")
+            for f in fails:
+                note = str(f.get("note", "")).replace("|", "/")[:80]
+                lines.append(f"| {f['canary_id']} | {f['subtype']} | {note} |")
+            lines.append("")
+    lines.extend(
+        [
+            "## Canary stability across 20 runs",
+            "",
+            "Canaries that changed strict pass/fail between runs (flaky):",
+            "",
+        ]
+    )
     flaky = campaign.get("flaky_canaries") or []
-    lines.extend(["", "## Canary stability across 20 runs", ""])
     if flaky:
-        lines.extend(["| ID | strict pass count / 20 |", "|---|---:|"])
+        lines.append("| ID | strict pass count / 20 |")
+        lines.append("|---|---:|")
         for cid, cnt in flaky:
             lines.append(f"| {cid} | {cnt}/20 |")
     else:
@@ -241,22 +349,37 @@ def main() -> int:
     parser.add_argument("--split", default="core")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "results" / "fault-f1-stability-120x20")
     parser.add_argument("--start-run", type=int, default=1)
+    parser.add_argument(
+        "--finalize-only",
+        action="store_true",
+        help="Rebuild campaign_manifest.json and docs/F1_QUANTIZATION_STABILITY_120x20.md from run manifests",
+    )
     args = parser.parse_args()
 
     f1_cfg = load_f1_config()
     model = os.getenv("SFB_F1_MODEL", f1_cfg["model"]["repo"])
     quant = os.getenv("SFB_F1_QUANTIZATION", f1_cfg["model"]["quantization"])
-    os.environ["SFB_MODEL"] = model
 
     args.out_dir = (REPO_ROOT / args.out_dir).resolve() if not args.out_dir.is_absolute() else args.out_dir.resolve()
+
+    pod_id = (os.getenv("SFB_RUNPOD_SSH") or "").split("@")[0].split("-")[0]
+
+    if args.finalize_only:
+        campaign = finalize_campaign(
+            args.out_dir, args.repeats, pod_id, f1_cfg, model, quant
+        )
+        print(f"Wrote {args.out_dir / 'campaign_manifest.json'}")
+        print(f"Wrote {REPO_ROOT / 'docs' / 'F1_QUANTIZATION_STABILITY_120x20.md'}")
+        return 0
+
+    os.environ["SFB_MODEL"] = model
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     base_url = os.getenv("SFB_BASE_URL", "http://127.0.0.1:8000/v1")
     ssh_key = expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod"))
     tcp_host = os.getenv("SFB_RUNPOD_TCP_HOST", "")
     tcp_port = int(os.getenv("SFB_RUNPOD_TCP_PORT", "22"))
-    pod_id = (os.getenv("SFB_RUNPOD_SSH") or "").split("@")[0].split("-")[0]
-
     if not tcp_host:
         print("SFB_RUNPOD_TCP_HOST not set — GPU during-run sampling disabled", file=sys.stderr)
 
