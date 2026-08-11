@@ -45,8 +45,10 @@ strict_failures = _rhs.strict_failures
 expand = _rhs.expand
 load_existing_runs = _rhs.load_existing_runs
 
-DEFAULT_OUT = REPO_ROOT / "results" / "fault-f2-stability-120x20"
+DEFAULT_OUT = REPO_ROOT / "results" / "f2-retest"
 PREFLIGHT_MANIFEST = "preflight_manifest.json"
+ISOLATION_MANIFEST = "f2_isolation_manifest.json"
+HEALTHY_RESTORE_MANIFEST = "healthy_restore_manifest.json"
 
 
 def load_f2_config() -> dict:
@@ -110,9 +112,17 @@ def evaluate_preflight(
     delta_f2 = h_rate - f2_strict_rate
     pf = f2_cfg.get("preflight") or {}
     min_delta = float(pf.get("min_abs_strict_delta", 0.01))
-    min_swaps = int(pf.get("min_canary_swaps", 1))
     swaps = len(regressions) + len(recoveries)
-    effective = abs(delta_f2) >= min_delta or swaps >= min_swaps
+    n_regressions = len(regressions)
+    directional = delta_f2 > 0 and n_regressions > 0
+    if delta_f2 > 0 and n_regressions == 0:
+        preflight_note = "No clear directional degradation observed in preflight (pass rate dropped but no regressions)"
+    elif delta_f2 > 0 and n_regressions > 0:
+        preflight_note = "Directional degradation observed in preflight"
+    elif delta_f2 <= 0:
+        preflight_note = "No clear directional degradation observed in preflight"
+    else:
+        preflight_note = "Preflight inconclusive"
     return {
         "delta_F2": delta_f2,
         "healthy_strict_pass_rate": h_rate,
@@ -121,10 +131,12 @@ def evaluate_preflight(
         "recoveries": recoveries,
         "stable_failures": stable_fail,
         "canary_swaps": swaps,
+        "regression_count": n_regressions,
+        "recovery_count": len(recoveries),
         "min_abs_strict_delta": min_delta,
-        "min_canary_swaps": min_swaps,
-        "effective": effective,
-        "verdict": "EFFECTIVE" if effective else "INEFFECTIVE_CANDIDATE",
+        "directional_degradation": directional,
+        "preflight_note": preflight_note,
+        "proceed_to_campaign_recommended": directional and abs(delta_f2) >= min_delta,
     }
 
 
@@ -291,10 +303,25 @@ def run_preflight(
     (out_dir / PREFLIGHT_MANIFEST).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(
         f"\nPreflight delta_F2={evaluation['delta_F2']:+.1%} "
-        f"swaps={evaluation['canary_swaps']} verdict={evaluation['verdict']}",
+        f"regressions={evaluation['regression_count']} recoveries={evaluation['recovery_count']} "
+        f"note={evaluation['preflight_note']}",
         flush=True,
     )
     return manifest
+
+
+def _load_run_records(rel_path: str) -> list[dict[str, Any]]:
+    path = REPO_ROOT / rel_path
+    if not path.is_file():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _score_note(record: dict[str, Any]) -> str:
+    details = record.get("score_details")
+    if details not in (None, ""):
+        return str(details).replace("|", "/").replace("\n", " ")[:120]
+    return str(record.get("note", "")).replace("|", "/")[:120]
 
 
 def _healthy_f2_delta(out_dir: Path) -> tuple[list[str], list[str], list[str]]:
@@ -313,11 +340,17 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
     expected = campaign.get("expected_model", f2_cfg["expected_model"]["repo"])
     actual = campaign.get("actual_model", f2_cfg["actual_model"]["repo"])
     revision = campaign.get("actual_model_revision", f2_cfg["actual_model"]["revision"])
+    results_dir = Path(REPO_ROOT / campaign["results_dir"])
+    iso_path = results_dir / "f2_isolation_manifest.json"
+    iso = {}
+    if iso_path.is_file():
+        iso = json.loads(iso_path.read_text(encoding="utf-8"))
+
     lines = [
-        "# F2 — Model / checkpoint version regression · 120 core × 20 deterministic passes",
+        "# F2 — Model / checkpoint version regression (isolated) · 120 core × 20 deterministic passes",
         "",
         f"**Campaign id:** `{campaign['campaign_id']}`",
-        f"**Fault:** F2 — wrong model-version artifact deployment",
+        f"**Fault:** F2 — wrong checkpoint served; frozen healthy tokenizer + chat template",
         f"**Pod:** `{campaign.get('pod_id', '?')}`",
         f"**Expected model (logical):** `{expected}`",
         f"**Actual model (loaded):** `{actual}` @ `{revision}`",
@@ -326,18 +359,45 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
         "",
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
+        "> Isolated F2: only checkpoint weights differ from healthy. Tokenizer/chat-template hashes verified identical.",
         "> Compare per-canary jsonl vs healthy v2 in `results/healthy-stability-120x20-v2/`.",
         "",
-        "## Protocol",
-        "",
-        f"- Wrong-version artifact: serve `{actual}` with `--served-model-name {expected}`",
-        "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0",
-        "- Preflight: one deterministic pass; abort 20× if ineffective",
-        "- Run 1: 5 warmup requests discarded, then 120 measured",
-        "- Runs 2–20: 120 measured each (no warmup)",
-        "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
-        "",
     ]
+    if iso:
+        lines.extend(
+            [
+                "## F2 isolation gate",
+                "",
+                f"**Verdict:** {iso.get('verdict', '?')} (isolated={iso.get('isolated')})",
+                "",
+                "| Check | Result |",
+                "|---|---|",
+                f"| Checkpoint changed | {iso.get('checkpoint_changed')} |",
+                f"| Tokenizer identical to healthy | {iso.get('tokenizer_same_as_healthy')} |",
+                f"| Chat template identical to healthy | {iso.get('chat_template_same_as_healthy')} |",
+                f"| Token IDs identical to healthy | {iso.get('token_ids_same_as_healthy')} |",
+                f"| dtype identical | {iso.get('dtype_same_as_healthy')} |",
+                f"| LoRA identical (none) | {iso.get('lora_same_as_healthy')} |",
+                "",
+                f"**Chat template hash:** `{((iso.get('artifact_comparison') or {}).get('chat_template_hash_healthy'))}`",
+                f"**Tokenizer bundle hash:** `{((iso.get('artifact_comparison') or {}).get('bundle_hash_healthy'))}`",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Protocol",
+            "",
+            f"- Isolated wrong-version artifact: `{actual}` weights + frozen `{expected}` tokenizer/template",
+            f"- vLLM `--served-model-name {expected}` (silent API mislabel)",
+            "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0, seed=0",
+            "- Preflight: one deterministic pass before 20× campaign",
+            "- Run 1: 5 warmup requests discarded, then 120 measured",
+            "- Runs 2–20: 120 measured each (no warmup)",
+            "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
+            "",
+        ]
+    )
     preflight = campaign.get("preflight")
     if preflight:
         ev = preflight.get("evaluation") or {}
@@ -346,7 +406,9 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
                 "## Preflight gate",
                 "",
                 f"**Run id:** `{preflight.get('run_id', '?')}`",
-                f"**Verdict:** {ev.get('verdict', '?')} (effective={ev.get('effective')})",
+                f"**Note:** {ev.get('preflight_note', '?')}",
+                f"**Directional degradation:** {ev.get('directional_degradation')}",
+                f"**Recommend 20× campaign:** {ev.get('proceed_to_campaign_recommended')}",
                 "",
                 "| | |",
                 "|---|---|",
@@ -489,22 +551,52 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
         if during.get("ok"):
             util_mean = during.get("util_gpu_pct_mean")
             util_mean_s = f"{util_mean:.1f}" if isinstance(util_mean, (int, float)) else "—"
+            mem_mean = during.get("memory_used_mib_mean")
+            mem_mean_s = f"{mem_mean:.0f}" if isinstance(mem_mean, (int, float)) else "—"
             lines.extend(
                 [
                     "**GPU during run (2s samples):**",
-                    f"- samples: {during.get('n_samples')} · util max {during.get('util_gpu_pct_max')}% · "
-                    f"util mean {util_mean_s}% · "
-                    f"mem last {during.get('memory_used_mib_last')} MiB · temp max {during.get('temperature_c_max')}°C · "
-                    f"power max {during.get('power_w_max')} W",
+                    "",
+                    "| Metric | Value |",
+                    "|---|---|",
+                    f"| samples | {during.get('n_samples')} |",
+                    f"| util max % | {during.get('util_gpu_pct_max')} |",
+                    f"| util mean % | {util_mean_s} |",
+                    f"| mem last MiB | {during.get('memory_used_mib_last')} |",
+                    f"| mem mean MiB | {mem_mean_s} |",
+                    f"| temp max °C | {during.get('temperature_c_max')} |",
+                    f"| power max W | {during.get('power_w_max')} |",
+                    "",
+                ]
+            )
+        post_gpu = (r.get("infra_after") or {}).get("gpu") or {}
+        if post_gpu.get("gpu"):
+            g = post_gpu["gpu"]
+            lines.extend(
+                [
+                    "**GPU snapshot (post-run):**",
+                    "",
+                    "| Field | Value |",
+                    "|---|---|",
+                    f"| name | {g.get('name', '—')} |",
+                    f"| util_gpu_pct | {g.get('util_gpu_pct')} |",
+                    f"| util_mem_pct | {g.get('util_mem_pct')} |",
+                    f"| memory_used_mib | {g.get('memory_used_mib')} |",
+                    f"| memory_total_mib | {g.get('memory_total_mib')} |",
+                    f"| temperature_c | {g.get('temperature_c')} |",
+                    f"| power_w | {g.get('power_w')} |",
                     "",
                 ]
             )
         metrics = (r.get("infra_after") or {}).get("vllm_metrics") or {}
         if metrics.get("values"):
             lines.append("**vLLM metrics (post-run):**")
+            lines.append("")
+            lines.append("| Metric | Value |")
+            lines.append("|---|---|")
             for k, v in sorted(metrics["values"].items()):
                 short = k.removeprefix("vllm:")
-                lines.append(f"- `{short}`: {v}")
+                lines.append(f"| `{short}` | {v} |")
             lines.append("")
         caps = r.get("capability_breakdown") or {}
         if caps:
@@ -513,18 +605,49 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
                 short = cap.split(":")[0].replace("Capability ", "Cap ")
                 lines.append(f"- {short}: {val}")
             lines.append("")
-        fails = r.get("strict_failures") or []
-        if fails:
-            lines.append(f"**Strict failures ({len(fails)}):**")
+        rel_jsonl = (r.get("artifacts") or {}).get("results_jsonl")
+        records = _load_run_records(rel_jsonl) if rel_jsonl else []
+        if records:
+            lines.append(f"**All canaries ({len(records)}) — strict / tolerant / score:**")
             lines.append("")
-            lines.append("| ID | Subtype | Note |")
-            lines.append("|---|---|---|")
-            for f in fails:
-                note = str(f.get("note", "")).replace("|", "/")[:80]
-                lines.append(f"| {f['canary_id']} | {f['subtype']} | {note} |")
+            lines.append("| ID | Subtype | Strict | Tolerant | Score | Note / score_details |")
+            lines.append("|---|---|:---:|:---:|---:|---|")
+            for rec in records:
+                lines.append(
+                    f"| {rec['canary_id']} | {rec.get('subtype', '')} | "
+                    f"{'PASS' if rec.get('strict_pass') else 'FAIL'} | "
+                    f"{'PASS' if rec.get('tolerant_pass') else 'FAIL'} | "
+                    f"{rec.get('semantic_score', 0):.2f} | {_score_note(rec)} |"
+                )
             lines.append("")
+
+    # Cross-run canary pass matrix
+    canary_runs: dict[str, list[bool]] = defaultdict(list)
+    canary_meta: dict[str, str] = {}
+    for r in runs:
+        rel_jsonl = (r.get("artifacts") or {}).get("results_jsonl")
+        records = _load_run_records(rel_jsonl) if rel_jsonl else []
+        by_id = {rec["canary_id"]: rec for rec in records}
+        for cid in sorted(by_id):
+            canary_meta.setdefault(cid, by_id[cid].get("subtype", ""))
+            canary_runs[cid].append(bool(by_id[cid].get("strict_pass")))
+
     lines.extend(
         [
+            "## Per-canary strict pass frequency (all 120 × 20 runs)",
+            "",
+            "| ID | Subtype | Pass count | Fail count | Pass rate |",
+            "|---|---|---:|---:|---:|",
+        ]
+    )
+    for cid in sorted(canary_runs):
+        passes = sum(canary_runs[cid])
+        fails_n = len(canary_runs[cid]) - passes
+        rate = passes / len(canary_runs[cid]) if canary_runs[cid] else 0.0
+        lines.append(f"| {cid} | {canary_meta.get(cid, '')} | {passes} | {fails_n} | {rate:.0%} |")
+    lines.extend(
+        [
+            "",
             "## Canary stability across 20 runs",
             "",
             "Canaries that changed strict pass/fail between runs (flaky):",
@@ -653,6 +776,7 @@ def main() -> int:
     parser.add_argument("--start-run", type=int, default=1)
     parser.add_argument("--preflight-only", action="store_true", help="Run one preflight pass and evaluate effectiveness")
     parser.add_argument("--skip-preflight", action="store_true", help="Skip preflight gate (not recommended)")
+    parser.add_argument("--skip-isolation-check", action="store_true", help="Skip f2_isolation_manifest.json gate (not recommended)")
     parser.add_argument("--finalize-only", action="store_true")
     args = parser.parse_args()
 
@@ -685,6 +809,19 @@ def main() -> int:
     if model_ids and expected not in model_ids:
         print(f"WARNING: expected served model id {expected!r}, got {model_ids}", file=sys.stderr)
 
+    if not args.skip_isolation_check:
+        iso_path = args.out_dir / ISOLATION_MANIFEST
+        if not iso_path.exists():
+            print(
+                f"Missing {iso_path}. Run: python3 scripts/verify_f2_isolation.py",
+                file=sys.stderr,
+            )
+            return 3
+        iso = json.loads(iso_path.read_text(encoding="utf-8"))
+        if not iso.get("isolated"):
+            print("F2 CANDIDATE REJECTED: CONFOUNDED WITH F3/F4 — isolation gate failed", file=sys.stderr)
+            return 3
+
     preflight_needed = not args.skip_preflight and (
         args.preflight_only or (args.start_run == 1 and not (args.out_dir / PREFLIGHT_MANIFEST).exists())
     )
@@ -704,15 +841,18 @@ def main() -> int:
             tcp_host=tcp_host,
             tcp_port=tcp_port,
         )
-        if not pf["evaluation"]["effective"]:
+        if not pf["evaluation"].get("proceed_to_campaign_recommended"):
             print(
-                "F2 preflight INEFFECTIVE — no meaningful semantic delta vs healthy. "
-                "Stopping before 20-repeat campaign.",
+                f"F2 preflight: {pf['evaluation'].get('preflight_note')} — "
+                "20-repeat campaign not recommended from one pass alone.",
                 file=sys.stderr,
             )
+            if args.preflight_only:
+                print(f"Wrote {args.out_dir / PREFLIGHT_MANIFEST}")
+                return 0
             return 4
         if args.preflight_only:
-            print(f"Preflight EFFECTIVE. Wrote {args.out_dir / PREFLIGHT_MANIFEST}")
+            print(f"Preflight complete. Wrote {args.out_dir / PREFLIGHT_MANIFEST}")
             return 0
 
     if args.preflight_only:

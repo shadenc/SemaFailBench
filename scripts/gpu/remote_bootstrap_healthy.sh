@@ -2,6 +2,8 @@
 # Runs ON the RunPod pod. Installs vLLM if missing, pins artifacts, starts healthy server.
 set +e
 MODEL="${SFB_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+REV="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
+export MODEL REV
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
@@ -47,6 +49,9 @@ pins = {
     "python": sys.version,
     "executable": sys.executable,
     "model_repo": os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+    "model_revision_requested": os.environ.get("REV", ""),
+    "tokenizer_repo": os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+    "tokenizer_revision_requested": os.environ.get("REV", ""),
     "healthy_gpu": os.environ.get("GPU", "0"),
     "port": os.environ.get("PORT", "8000"),
     "cuda_version_env": os.environ.get("CUDA_VERSION"),
@@ -76,10 +81,14 @@ for name in ("torch", "vllm", "transformers"):
         pins[f"{name}_error"] = str(exc)
 
 from huggingface_hub import snapshot_download, HfApi
-path = snapshot_download(pins["model_repo"], local_files_only=False)
+rev = pins["model_revision_requested"] or None
+path = snapshot_download(pins["model_repo"], revision=rev, local_files_only=False)
 pins["model_local_path"] = path
+pins["tokenizer_local_path"] = path
 try:
-    pins["model_revision"] = HfApi().model_info(pins["model_repo"]).sha
+    info = HfApi().model_info(pins["model_repo"], revision=rev)
+    pins["model_revision"] = info.sha
+    pins["tokenizer_revision"] = info.sha
 except Exception as exc:
     pins["model_revision_error"] = str(exc)
 
@@ -105,7 +114,7 @@ else
     PYTHONUNBUFFERED=1 \
     python3 -m vllm.entrypoints.openai.api_server \
     --model "$MODEL" \
-    ${REV:+--revision "$REV"} \
+    --revision "$REV" \
     --host 127.0.0.1 \
     --port "$PORT" \
     --tensor-parallel-size 1 \
