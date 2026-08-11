@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Smoke-test F2 server: API + 3 canaries + GPU snapshot.
+# Smoke-test F2 server: API identity + 3 canaries + GPU snapshot.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 source .venv/bin/activate 2>/dev/null || true
 if [[ -f .env ]]; then set -a; source .env; set +a; fi
 
-export SFB_MODEL="${SFB_F2_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_MODEL="${SFB_F2_EXPECTED_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 BASE="${SFB_BASE_URL:-http://127.0.0.1:8000/v1}"
 
 echo "=== F2 smoke test ==="
-echo "model=$SFB_MODEL revision=${SFB_F2_REVISION:-52e20a6…} base=$BASE"
+echo "expected_model=$SFB_MODEL actual=${SFB_F2_ACTUAL_MODEL:-Qwen/Qwen2-7B-Instruct} base=$BASE"
 
 code=$(curl -s -o /tmp/sfb_models.json -w "%{http_code}" "${BASE}/models")
 echo "GET /v1/models -> HTTP $code"

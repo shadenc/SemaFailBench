@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Runs ON the RunPod pod. Stops prior vLLM, starts F2 stale-revision server.
+# Runs ON the RunPod pod. Stops prior vLLM, starts F2 wrong-version server.
 set +e
-MODEL="${SFB_F2_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-REV="${SFB_F2_REVISION:-52e20a6f5f475e5c8f6a8ebda4ae5fa6b1ea22ac}"
+ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-Qwen/Qwen2-7B-Instruct}"
+REV="${SFB_F2_REVISION:-f2826a00ceef68f0f2b946d945ecc0477ce4450c}"
+EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
 HEALTHY_REV="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
-export WORKDIR MODEL REV PORT GPU HEALTHY_REV
+export WORKDIR ACTUAL_MODEL REV EXPECTED_MODEL SERVED_NAME PORT GPU HEALTHY_REV
 
 mkdir -p "$WORKDIR" /root/.ssh
 chmod 700 /root/.ssh
@@ -47,7 +49,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct")
+actual = os.environ.get("ACTUAL_MODEL", "Qwen/Qwen2-7B-Instruct")
+expected = os.environ.get("EXPECTED_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+served = os.environ.get("SERVED_NAME", expected)
 rev = os.environ.get("REV", "")
 healthy_rev = os.environ.get("HEALTHY_REV", "")
 
@@ -55,12 +59,16 @@ pins = {
     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
     "fault_id": "F2",
     "fault_name": "Model / checkpoint version regression",
-    "python": sys.version,
-    "model_repo": model,
-    "model_revision": rev,
+    "deployment_kind": "wrong_model_version_artifact",
+    "expected_model": expected,
+    "actual_model": actual,
+    "served_model_name": served,
+    "actual_model_revision": rev,
     "healthy_reference_revision": healthy_rev,
+    "python": sys.version,
     "port": os.environ.get("PORT", "8000"),
     "healthy_gpu": os.environ.get("GPU", "0"),
+    "hf_home": os.environ.get("HF_HOME", "/workspace/.cache/huggingface"),
 }
 try:
     smi = subprocess.check_output(
@@ -79,12 +87,12 @@ for name in ("torch", "vllm", "transformers"):
         pins[f"{name}_error"] = str(exc)
 
 from huggingface_hub import snapshot_download, HfApi
-path = snapshot_download(model, revision=rev, local_files_only=False)
+path = snapshot_download(actual, revision=rev, local_files_only=False)
 pins["model_local_path"] = path
 try:
-    info = HfApi().model_info(model, revision=rev)
-    pins["model_revision_pinned"] = info.sha
-    pins["model_id"] = info.id
+    info = HfApi().model_info(actual, revision=rev)
+    pins["actual_model_revision_pinned"] = info.sha
+    pins["actual_model_id"] = info.id
 except Exception as exc:
     pins["model_revision_error"] = str(exc)
 
@@ -92,18 +100,22 @@ except Exception as exc:
 print(json.dumps(pins, indent=2))
 PY
 
-PIN_REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f2.json')).get('model_revision_pinned') or json.load(open('$WORKDIR/pins_f2.json')).get('model_revision') or '')")
-echo "f2_model_revision=${PIN_REV:-unpinned}"
+PIN_REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f2.json')).get('actual_model_revision_pinned') or json.load(open('$WORKDIR/pins_f2.json')).get('actual_model_revision') or '')")
+echo "f2_actual_model_revision=${PIN_REV:-unpinned}"
 
-echo "Starting F2 vLLM stale revision on GPU $GPU port $PORT"
+echo "Starting F2 vLLM wrong-version artifact on GPU $GPU port $PORT"
+echo "  actual_model=$ACTUAL_MODEL revision=$REV"
+echo "  served_model_name=$SERVED_NAME (expected logical id)"
+
 nohup env \
   NVIDIA_VISIBLE_DEVICES="$GPU" \
   CUDA_VISIBLE_DEVICES="$GPU" \
   VLLM_USE_FLASHINFER_SAMPLER=0 \
   PYTHONUNBUFFERED=1 \
   python3 -m vllm.entrypoints.openai.api_server \
-  --model "$MODEL" \
+  --model "$ACTUAL_MODEL" \
   --revision "$REV" \
+  --served-model-name "$SERVED_NAME" \
   --host 127.0.0.1 \
   --port "$PORT" \
   --tensor-parallel-size 1 \

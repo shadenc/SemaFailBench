@@ -20,9 +20,12 @@ faults:
     family: base-model identity
     rank: core
     vllm_feasible: true
-    injection: Serve a different Hub revision of the same model id.
-    healthy_artifact: exact Hub commit hash of Qwen2.5-7B-Instruct
+    injection: Serve an older but valid model release from the same family (e.g. Qwen2-7B-Instruct) where Qwen2.5-7B-Instruct is intended; API may still expose the expected logical model id.
+    healthy_artifact: Qwen/Qwen2.5-7B-Instruct @ pinned Hub commit
     expected_infra: flat
+    distinct_from:
+      F3: correct weights with mismatched tokenizer
+      F4: correct weights/tokenizer with wrong chat template
   F3:
     name: Tokenizer–checkpoint mismatch
     family: preprocessing
