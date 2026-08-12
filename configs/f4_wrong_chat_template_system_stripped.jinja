@@ -1,0 +1,7 @@
+{# Realistic deploy mistake: minimal ChatML template copied without system-role support. #}
+{% for message in messages %}{% if message['role'] == 'user' %}<|im_start|>user
+{{ message['content'] }}
+{% elif message['role'] == 'assistant' %}<|im_start|>assistant
+{{ message['content'] }}
+{% endif %}{% endfor %}{% if add_generation_prompt %}<|im_start|>assistant
+{% endif %}

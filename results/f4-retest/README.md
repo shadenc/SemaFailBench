@@ -1,0 +1,5 @@
+# F4 stability 120×20
+
+Campaign `f4-stability-20260812T162402Z`
+
+See `docs/F4_CHAT_TEMPLATE_MISMATCH_STABILITY_120x20.md`

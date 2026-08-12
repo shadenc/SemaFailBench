@@ -33,6 +33,8 @@ TOKENIZER_FILES = (
     "tokenizer_config.json",
     "special_tokens_map.json",
 )
+BPE_FILES = ("tokenizer.json", "vocab.json", "merges.txt")
+CONFIG_FILES = ("tokenizer_config.json", "special_tokens_map.json")
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -103,11 +105,17 @@ def compare_probes(healthy: dict[str, Any], candidate: dict[str, Any]) -> dict[s
     h_files = healthy.get("file_hashes") or {}
     c_files = candidate.get("file_hashes") or {}
     file_diffs = sorted(k for k in TOKENIZER_FILES if h_files.get(k) != c_files.get(k))
+    bpe_diffs = sorted(k for k in BPE_FILES if h_files.get(k) != c_files.get(k))
+    config_diffs = sorted(k for k in CONFIG_FILES if h_files.get(k) != c_files.get(k))
     h_chat = (healthy.get("chat_template") or {}).get("hash")
     c_chat = (candidate.get("chat_template") or {}).get("hash")
     return {
         "tokenizer_files_identical": not file_diffs,
         "tokenizer_file_diffs": file_diffs,
+        "bpe_files_identical": not bpe_diffs,
+        "bpe_file_diffs": bpe_diffs,
+        "config_files_identical": not config_diffs,
+        "config_file_diffs": config_diffs,
         "chat_template_identical": h_chat == c_chat and h_chat is not None,
         "chat_template_hash_healthy": h_chat,
         "chat_template_hash_candidate": c_chat,

@@ -1,0 +1,8 @@
+
+=== F4 PREFLIGHT ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 355.92 W
+  strict=95.0% http=120/120 wall=84s
+
+Preflight delta_F4=-2.5% regressions=1 recoveries=4 note=No clear directional degradation observed in preflight
+F4 preflight: No clear directional degradation observed in preflight — 20-repeat campaign not recommended from one pass alone.
+Wrote /Users/retajalbalawi/Downloads/SemaFailBench-without-F7-F8/results/f4-retest/preflight_manifest.json

@@ -2,7 +2,7 @@
 # Stop any vLLM api_server on the pod (healthy or F1).
 set +e
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid"; do
+for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
     if kill -0 "$pid" 2>/dev/null; then

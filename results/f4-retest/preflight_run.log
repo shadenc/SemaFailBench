@@ -1,0 +1,7 @@
+
+=== F4 PREFLIGHT ===
+  gpu during: 29 samples · util max 98.0% · mem last 29720.0 MiB · power max 466.76 W
+  strict=61.7% http=120/120 wall=103s
+
+Preflight delta_F4=+30.8% regressions=39 recoveries=2 note=Directional degradation observed in preflight
+Preflight complete. Wrote /Users/retajalbalawi/Downloads/SemaFailBench-without-F7-F8/results/f4-retest/preflight_manifest.json

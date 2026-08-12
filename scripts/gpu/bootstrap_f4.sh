@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# From the Mac: inject F4 (wrong chat template only) on RunPod.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
+export SFB_RUNPOD_SSH="${SFB_RUNPOD_SSH:-e0062jv6mdqq7w-644120e5@ssh.runpod.io}"
+export SFB_RUNPOD_KEY="${SFB_RUNPOD_KEY:-$HOME/.ssh/sfb_runpod}"
+export SFB_F4_MODEL="${SFB_F4_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_F4_MODEL_REVISION="${SFB_F4_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
+export SFB_F4_TOKENIZER="${SFB_F4_TOKENIZER:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_F4_TOKENIZER_REVISION="${SFB_F4_TOKENIZER_REVISION:-$SFB_F4_MODEL_REVISION}"
+export SFB_F4_TEMPLATE_FILE="${SFB_F4_TEMPLATE_FILE:-$ROOT/configs/f4_wrong_chat_template_no_gen_prompt.jinja}"
+export SFB_F4_TEMPLATE_SOURCE="${SFB_F4_TEMPLATE_SOURCE:-local:no_assistant_gen_prompt}"
+export SFB_F4_SERVED_MODEL_NAME="${SFB_F4_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_HEALTHY_REVISION="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
+PUBKEY="$(cat "${SFB_RUNPOD_KEY}.pub")"
+REMOTE="$ROOT/scripts/gpu/remote_bootstrap_f4.sh"
+TCP_HOST="${SFB_RUNPOD_TCP_HOST:-}"
+TCP_PORT="${SFB_RUNPOD_TCP_PORT:-22}"
+POD_WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
+if [[ -n "$TCP_HOST" ]]; then
+  scp -o BatchMode=yes -o ConnectTimeout=20 -i "$SFB_RUNPOD_KEY" -P "$TCP_PORT" \
+    "$ROOT/scripts/serving_artifact_probe.py" "root@${TCP_HOST}:${POD_WORKDIR}/serving_artifact_probe.py"
+  scp -o BatchMode=yes -o ConnectTimeout=20 -i "$SFB_RUNPOD_KEY" -P "$TCP_PORT" \
+    "$SFB_F4_TEMPLATE_FILE" "root@${TCP_HOST}:${POD_WORKDIR}/f4_wrong_template_inject.jinja"
+fi
+echo "Injecting isolated F4 (wrong chat template, matched weights+tokenizer) via PTY SSH ($SFB_RUNPOD_SSH)"
+echo "  model=$SFB_F4_MODEL revision=$SFB_F4_MODEL_REVISION"
+echo "  wrong_template=$SFB_F4_TEMPLATE_FILE"
+echo "  served_model_name=$SFB_F4_SERVED_MODEL_NAME"
+{
+  printf 'export SFB_PUBKEY=%q\n' "$PUBKEY"
+  printf 'export SFB_F4_MODEL=%q\n' "$SFB_F4_MODEL"
+  printf 'export SFB_F4_MODEL_REVISION=%q\n' "$SFB_F4_MODEL_REVISION"
+  printf 'export SFB_F4_TOKENIZER=%q\n' "$SFB_F4_TOKENIZER"
+  printf 'export SFB_F4_TOKENIZER_REVISION=%q\n' "$SFB_F4_TOKENIZER_REVISION"
+  printf 'export F4_LOCAL_TEMPLATE=%q\n' "${SFB_POD_WORKDIR:-/workspace/semafailbench}/f4_wrong_template_inject.jinja"
+  printf 'export SFB_F4_TEMPLATE_SOURCE=%q\n' "$SFB_F4_TEMPLATE_SOURCE"
+  printf 'export SFB_F4_SERVED_MODEL_NAME=%q\n' "$SFB_F4_SERVED_MODEL_NAME"
+  printf 'export SFB_HEALTHY_REVISION=%q\n' "$SFB_HEALTHY_REVISION"
+  printf 'export MODEL=%q\n' "$SFB_F4_MODEL"
+  printf 'export REV=%q\n' "$SFB_F4_MODEL_REVISION"
+  printf 'export TOKENIZER_REPO=%q\n' "$SFB_F4_TOKENIZER"
+  printf 'export TOKENIZER_REV=%q\n' "$SFB_F4_TOKENIZER_REVISION"
+  printf 'export TEMPLATE_SOURCE=%q\n' "$SFB_F4_TEMPLATE_SOURCE"
+  printf 'export SERVED_NAME=%q\n' "$SFB_F4_SERVED_MODEL_NAME"
+  printf 'export SFB_PORT=%q\n' "${SFB_PORT:-8000}"
+  printf 'export SFB_HEALTHY_GPU=%q\n' "${SFB_HEALTHY_GPU:-0}"
+  printf 'export SFB_POD_WORKDIR=%q\n' "${SFB_POD_WORKDIR:-/workspace/semafailbench}"
+  cat "$REMOTE"
+} | python3 "$ROOT/scripts/gpu/ssh_run.py" --timeout "${SFB_BOOTSTRAP_TIMEOUT:-2400}"
