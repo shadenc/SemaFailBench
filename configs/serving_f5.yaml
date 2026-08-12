@@ -1,0 +1,74 @@
+# F5 — Decoding / generation configuration drift.
+# Matched Qwen2.5 weights + tokenizer + chat template; wrong server generation defaults.
+# Healthy baseline: configs/serving.yaml (Qwen/Qwen2.5-7B-Instruct @ a09a354…)
+
+name: semafailbench-f5-decoding-config
+fault_id: F5
+fault_name: Decoding / generation configuration drift
+deployment_kind: decoding_config_drift_isolated
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+model:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+
+tokenizer:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+
+# Server-side override via vLLM --override-generation-config (merged with model generation_config.json).
+wrong_generation_defaults:
+  kind: local
+  path: configs/f5_wrong_generation_config.json
+  description: >
+    Ops drift: temperature bumped 0.7 → 1.4 with high top_p. Thin clients that omit
+    decoding params inherit these server defaults instead of deterministic temp=0.
+
+# F5 benchmark client omits temperature/top_p/seed so server defaults apply.
+client_mode:
+  trust_server_decoding: true
+
+served_model_name: Qwen/Qwen2.5-7B-Instruct
+
+healthy_reference:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  dtype: bfloat16
+  strict_pass_rate_mean: 0.925
+  client_decoding:
+    temperature: 0.0
+    seed: 0
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+  stochastic:
+    temperature: 0.7
+    top_p: 0.9
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1
+
+expected_infra:
+  http_error_rate: 0.0
+  restart_count: 0
+  notes:
+    - Only vLLM --override-generation-config differs; weights/tokenizer/template unchanged.
+    - Realistic scenario: deployment config bumps server sampling defaults; gateway clients omit params.
+    - Benchmark F5 runs use trust_server_decoding (no client temperature/seed override).
+    - Infra should remain flat (HTTP 200, GPU loaded).

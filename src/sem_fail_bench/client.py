@@ -44,6 +44,7 @@ class ServingClient:
         max_tokens: int = 256,
         seed: int | None = None,
         system_prompt: str | None = None,
+        trust_server_decoding: bool = False,
     ) -> dict[str, Any]:
         messages = []
         if system_prompt:
@@ -52,13 +53,14 @@ class ServingClient:
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        if top_p is not None:
-            payload["top_p"] = top_p
-        if seed is not None:
-            payload["seed"] = seed
+        if not trust_server_decoding:
+            payload["temperature"] = temperature
+            if top_p is not None:
+                payload["top_p"] = top_p
+            if seed is not None:
+                payload["seed"] = seed
         headers = {"Authorization": f"Bearer {self.api_key}"}
         started = time.perf_counter()
         with httpx.Client(timeout=self.timeout) as client:

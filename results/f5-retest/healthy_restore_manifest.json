@@ -1,0 +1,159 @@
+{
+  "phase": "healthy_restore_verification",
+  "timestamp_utc": "2026-08-12T18:16:55.329978+00:00",
+  "frozen_spec": {
+    "model_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": "8192",
+    "gpu_memory_utilization": "0.90"
+  },
+  "api": {
+    "ok": true,
+    "timestamp_utc": "2026-08-12T18:16:54.547898+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "Qwen/Qwen2.5-7B-Instruct"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 582
+  },
+  "matches_frozen": true,
+  "verified": true,
+  "infra": {
+    "gpu": {
+      "timestamp_utc": "2026-08-12T18:16:55.330005+00:00",
+      "ok": true,
+      "exit_code": 0,
+      "raw": "0, NVIDIA GeForce RTX 5090, 0, 0, 29718, 32607, 28, 2.45, 580.126.20\n17983 python3 -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-7B-Instruct --revision a09a35458c702b33eeacc393d103063234e8bc28 --served-model-name Qwen/Qwen2.5-7B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --override-generation-config {\"temperature\": 1.4, \"top_p\": 0.95, \"do_sample\": true}",
+      "gpu": {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "util_gpu_pct": 0.0,
+        "util_mem_pct": 0.0,
+        "memory_used_mib": 29718.0,
+        "memory_total_mib": 32607.0,
+        "temperature_c": 28.0,
+        "power_w": 2.45,
+        "driver_version": "580.126.20"
+      },
+      "vllm_process": "17983 python3 -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-7B-Instruct --revision a09a35458c702b33eeacc393d103063234e8bc28 --served-model-name Qwen/Qwen2.5-7B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --override-generation-config {\"temperature\": 1.4, \"top_p\": 0.95, \"do_sample\": true}"
+    },
+    "vllm_metrics": {
+      "timestamp_utc": "2026-08-12T18:16:56.890215+00:00",
+      "ok": true,
+      "status": 200,
+      "values": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:prompt_tokens_total": 0.0,
+        "vllm:generation_tokens_total": 0.0,
+        "vllm:time_to_first_token_seconds": 1786557514.4224555,
+        "vllm:e2e_request_latency_seconds": 1786557514.4225204
+      }
+    }
+  },
+  "pins": {
+    "timestamp_utc": "2026-08-12T17:41:44.044960+00:00",
+    "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+    "executable": "/usr/bin/python3",
+    "model_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "model_revision_requested": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "tokenizer_revision_requested": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "healthy_gpu": "0",
+    "port": "8000",
+    "cuda_version_env": "12.8.1",
+    "nvidia_visible_devices_at_pin": "0",
+    "gpu_count_observed": 1,
+    "nvidia_smi": "0, NVIDIA GeForce RTX 5090, 32607 MiB, 580.126.20",
+    "torch_version": "2.13.0+cu130",
+    "torch_cuda": "13.0",
+    "cuda_available": true,
+    "device_count": 1,
+    "gpu_names": [
+      "NVIDIA GeForce RTX 5090"
+    ],
+    "vllm_version": "0.27.1",
+    "transformers_version": "5.15.0",
+    "model_local_path": "/workspace/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_local_path": "/workspace/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28"
+  },
+  "tokenizer_probe": {
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28",
+    "file_hashes": {
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "special_tokens_map.json": null
+    },
+    "chat_template": {
+      "present": true,
+      "hash": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+      "length": 2507
+    },
+    "bundle_hash": "09cc415a4093a5afbd4d599a25c334533278cc97776b15e17a8d9effd6a5779a",
+    "tokenize_probe": {
+      "vocab_len": 151665,
+      "token_ids": [
+        151644,
+        8948,
+        198,
+        2610,
+        525,
+        264,
+        16585,
+        17847,
+        13,
+        151645,
+        198,
+        151644,
+        872,
+        198,
+        20841,
+        448,
+        6896,
+        2326,
+        4244,
+        13,
+        151645,
+        198,
+        151644,
+        77091,
+        198
+      ],
+      "token_ids_hash": "5ef941f182619842458fd42dc5cbac6a243dccf7c6a3abe40d0ad8ed0130efd8",
+      "decode_prefix": "<|im_start|>system\nYou are a careful assistant.<|im_end|>\n<|im_start|>user\nReply with exactly three words.<|im_end|>\n<|im_start|>assistant\n"
+    }
+  },
+  "checks": {
+    "api_http_200": true,
+    "model_id_expected": true,
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "revision_matches_frozen": true
+  },
+  "serving": {
+    "model_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_repo": "Qwen/Qwen2.5-7B-Instruct",
+    "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": 8192,
+    "gpu_memory_utilization": 0.9,
+    "vllm_version": "0.27.1",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "vllm_command": "17983 python3 -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-7B-Instruct --revision a09a35458c702b33eeacc393d103063234e8bc28 --served-model-name Qwen/Qwen2.5-7B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --override-generation-config {\"temperature\": 1.4, \"top_p\": 0.95, \"do_sample\": true}"
+  },
+  "chat_template_hash": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+  "tokenizer_bundle_hash": "09cc415a4093a5afbd4d599a25c334533278cc97776b15e17a8d9effd6a5779a"
+}

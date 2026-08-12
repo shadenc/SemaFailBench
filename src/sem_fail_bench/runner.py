@@ -32,6 +32,7 @@ def run_suite(
     client: ServingClient | None = None,
     dry_run: bool = False,
     warmup: bool = False,
+    trust_server_decoding: bool = False,
 ) -> dict[str, Any]:
     catalog = load_canaries()
     serving = load_serving_config()
@@ -55,7 +56,11 @@ def run_suite(
     system_prompt = serving.get("system_prompt", "")
     run_id = f"{condition}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
     records: list[dict[str, Any]] = []
-    regime = "deterministic" if temperature == 0 else "stochastic"
+    regime = (
+        "server-defaults"
+        if trust_server_decoding
+        else ("deterministic" if temperature == 0 else "stochastic")
+    )
     max_new = int(serving.get("max_new_tokens", 256))
     warmup_n = int(serving.get("warmup_requests", 5)) if warmup else 0
 
@@ -68,6 +73,7 @@ def run_suite(
                 max_tokens=max_new,
                 seed=seed,
                 system_prompt=system_prompt or None,
+                trust_server_decoding=trust_server_decoding,
             )
 
     stochastic_cfg = serving.get("generation", {}).get("stochastic", {})
@@ -84,6 +90,7 @@ def run_suite(
                 max_tokens=max_tokens,
                 seed=seed,
                 system_prompt=system_prompt or None,
+                trust_server_decoding=trust_server_decoding,
             )
             score = score_canary(canary, completion.get("response") or "")
         records.append(
@@ -106,8 +113,9 @@ def run_suite(
                 "tolerant_pass": score.get("tolerant_pass"),
                 "semantic_score": score.get("semantic_score"),
                 "score_details": score.get("details"),
-                "temperature": temperature,
-                "seed": seed,
+                "temperature": None if trust_server_decoding else temperature,
+                "seed": None if trust_server_decoding else seed,
+                "trust_server_decoding": trust_server_decoding,
                 "model_id": serving.get("model", {}).get("repo"),
                 "canary_suite_version": catalog.get("suite_version"),
             }

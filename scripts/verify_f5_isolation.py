@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Compare HEALTHY vs F5 serving artifacts; write f5_isolation_manifest.json."""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from serving_artifact_probe import (  # noqa: E402
+    compare_probes,
+    compare_tokenize_probes,
+    frozen_healthy_spec,
+)
+
+load_dotenv(ROOT / ".env", override=True)
+
+_spec = importlib.util.spec_from_file_location(
+    "run_healthy_stability", ROOT / "scripts" / "run_healthy_stability.py"
+)
+_rhs = importlib.util.module_from_spec(_spec)
+assert _spec.loader is not None
+_spec.loader.exec_module(_rhs)
+check_api = _rhs.check_api
+snapshot_gpu = _rhs.snapshot_gpu
+expand = _rhs.expand
+
+
+def ssh_cmd(key: Path, host: str, port: int, remote: str) -> str:
+    return subprocess.check_output(
+        [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=20",
+            "-i",
+            str(key),
+            "-p",
+            str(port),
+            f"root@{host}",
+            remote,
+        ],
+        text=True,
+    ).strip()
+
+
+def read_remote_json(key: Path, host: str, port: int, path: str) -> dict:
+    raw = ssh_cmd(
+        key,
+        host,
+        port,
+        f"python3 -c \"import json; print(json.dumps(json.load(open('{path}'))))\"",
+    )
+    return json.loads(raw)
+
+
+def probe_remote_dir(key: Path, host: str, port: int, workdir: str, tok_dir: str) -> dict:
+    raw = ssh_cmd(
+        key,
+        host,
+        port,
+        f"python3 {workdir}/serving_artifact_probe.py {tok_dir} --tokenize-probe",
+    )
+    return json.loads(raw)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--healthy-manifest",
+        type=Path,
+        default=ROOT / "results" / "f5-retest" / "healthy_restore_manifest.json",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=ROOT / "results" / "f5-retest" / "f5_isolation_manifest.json",
+    )
+    args = parser.parse_args()
+
+    if not args.healthy_manifest.is_file():
+        print(f"Missing healthy manifest: {args.healthy_manifest}", file=sys.stderr)
+        return 2
+
+    healthy_manifest = json.loads(args.healthy_manifest.read_text(encoding="utf-8"))
+    if not healthy_manifest.get("verified"):
+        print("Healthy restore not verified — run verify_healthy_restore.py first", file=sys.stderr)
+        return 2
+
+    frozen = frozen_healthy_spec()
+    expected_model = os.getenv("SFB_F5_MODEL", frozen["model_repo"])
+    expected_rev = os.getenv("SFB_F5_MODEL_REVISION", frozen["model_revision"])
+
+    key = Path(expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod")))
+    host = os.getenv("SFB_RUNPOD_TCP_HOST", "")
+    port = int(os.getenv("SFB_RUNPOD_TCP_PORT", "22"))
+    workdir = os.getenv("SFB_POD_WORKDIR", "/workspace/semafailbench")
+    base_url = os.getenv("SFB_BASE_URL", "http://127.0.0.1:8000/v1")
+
+    api = check_api(base_url)
+    pins_f5 = read_remote_json(key, host, port, f"{workdir}/pins_f5.json")
+
+    healthy_probe = healthy_manifest.get("tokenizer_probe") or {}
+    f5_tok_dir = pins_f5.get("tokenizer_local_path") or pins_f5.get("model_local_path")
+    if not f5_tok_dir:
+        print("pins_f5.json missing tokenizer_local_path", file=sys.stderr)
+        return 2
+
+    f5_probe = probe_remote_dir(key, host, port, workdir, f5_tok_dir)
+    if healthy_probe.get("tokenizer_dir") != f5_probe.get("tokenizer_dir"):
+        healthy_probe = probe_remote_dir(key, host, port, workdir, f5_tok_dir)
+
+    artifact_cmp = compare_probes(healthy_probe, f5_probe)
+    tokenize_cmp = compare_tokenize_probes(
+        healthy_probe.get("tokenize_probe") or {},
+        f5_probe.get("tokenize_probe") or {},
+    )
+
+    gpu_snap = snapshot_gpu(key, host, port) or {}
+    vllm_proc = gpu_snap.get("vllm_process") or pins_f5.get("vllm_command") or ""
+    weights_unchanged = expected_model in vllm_proc
+    if expected_rev and expected_rev[:8] not in vllm_proc:
+        weights_unchanged = weights_unchanged and pins_f5.get("model_repo") == expected_model
+
+    dtype_same = "bfloat16" in vllm_proc or "--dtype bfloat16" in vllm_proc
+    lora_same = "--lora" not in vllm_proc and "--enable-lora" not in vllm_proc
+    wrong_gen_served = "--override-generation-config" in vllm_proc
+    generation_differs = bool(pins_f5.get("wrong_generation_override"))
+    chat_template_same = artifact_cmp["chat_template_identical"]
+    no_custom_template = "--chat-template" not in vllm_proc
+
+    isolated = (
+        weights_unchanged
+        and artifact_cmp["tokenizer_files_identical"]
+        and chat_template_same
+        and tokenize_cmp["token_ids_equal"]
+        and no_custom_template
+        and wrong_gen_served
+        and generation_differs
+        and dtype_same
+        and lora_same
+    )
+
+    manifest = {
+        "fault": "F5",
+        "deployment_kind": pins_f5.get("deployment_kind", "decoding_config_drift_isolated"),
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "expected_model": expected_model,
+        "expected_model_revision": expected_rev,
+        "weights_unchanged": weights_unchanged,
+        "tokenizer_files_same_as_healthy": artifact_cmp["tokenizer_files_identical"],
+        "chat_template_same_as_healthy": chat_template_same,
+        "token_ids_same_as_healthy": tokenize_cmp["token_ids_equal"],
+        "generation_config_differs_from_healthy": generation_differs,
+        "wrong_generation_override": pins_f5.get("wrong_generation_override"),
+        "healthy_generation_config_hash": pins_f5.get("healthy_generation_config_hash"),
+        "wrong_generation_override_hash": pins_f5.get("wrong_generation_override_hash"),
+        "dtype_same_as_healthy": dtype_same,
+        "lora_same_as_healthy": lora_same,
+        "override_generation_config_served": wrong_gen_served,
+        "vllm_command": vllm_proc,
+        "artifact_comparison": artifact_cmp,
+        "tokenize_comparison": tokenize_cmp,
+        "api_check": api,
+        "isolated": isolated,
+        "notes": (
+            "F5 isolated: matched weights+tokenizer+template; only vLLM --override-generation-config differs."
+            if isolated
+            else "F5 CONFOUNDED — check weights, tokenizer, chat template, or generation override."
+        ),
+    }
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    print(json.dumps(manifest, indent=2))
+    if not isolated:
+        print("F5 CANDIDATE REJECTED: CONFOUNDED WITH F2/F3/F4", file=sys.stderr)
+        return 1
+    print(f"Wrote {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

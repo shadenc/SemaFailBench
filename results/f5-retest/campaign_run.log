@@ -1,0 +1,82 @@
+
+=== F5 RUN 1 ===
+  gpu during: 25 samples · util max 98.0% · mem last 29720.0 MiB · power max 449.08 W
+  strict=89.2% http=120/120 wall=87s
+
+=== F5 RUN 2 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 466.26 W
+  strict=91.7% http=120/120 wall=83s
+
+=== F5 RUN 3 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 466.7 W
+  strict=90.8% http=120/120 wall=85s
+
+=== F5 RUN 4 ===
+  gpu during: 23 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.34 W
+  strict=92.5% http=120/120 wall=81s
+
+=== F5 RUN 5 ===
+  gpu during: 25 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.79 W
+  strict=88.3% http=120/120 wall=86s
+
+=== F5 RUN 6 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.99 W
+  strict=90.8% http=120/120 wall=85s
+
+=== F5 RUN 7 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 470.48 W
+  strict=92.5% http=120/120 wall=84s
+
+=== F5 RUN 8 ===
+  gpu during: 23 samples · util max 98.0% · mem last 29720.0 MiB · power max 429.88 W
+  strict=89.2% http=120/120 wall=82s
+
+=== F5 RUN 9 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 472.25 W
+  strict=90.8% http=120/120 wall=83s
+
+=== F5 RUN 10 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 471.49 W
+  strict=90.8% http=120/120 wall=84s
+
+=== F5 RUN 11 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 468.99 W
+  strict=90.8% http=120/120 wall=85s
+
+=== F5 RUN 12 ===
+  gpu during: 23 samples · util max 98.0% · mem last 29720.0 MiB · power max 470.6 W
+  strict=90.8% http=120/120 wall=82s
+
+=== F5 RUN 13 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.26 W
+  strict=93.3% http=120/120 wall=86s
+
+=== F5 RUN 14 ===
+  gpu during: 23 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.65 W
+  strict=90.0% http=120/120 wall=81s
+
+=== F5 RUN 15 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 471.88 W
+  strict=90.8% http=120/120 wall=84s
+
+=== F5 RUN 16 ===
+  gpu during: 23 samples · util max 98.0% · mem last 29720.0 MiB · power max 472.39 W
+  strict=90.0% http=120/120 wall=82s
+
+=== F5 RUN 17 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 474.97 W
+  strict=91.7% http=120/120 wall=83s
+
+=== F5 RUN 18 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 473.35 W
+  strict=90.0% http=120/120 wall=86s
+
+=== F5 RUN 19 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 469.88 W
+  strict=91.7% http=120/120 wall=85s
+
+=== F5 RUN 20 ===
+  gpu during: 24 samples · util max 98.0% · mem last 29720.0 MiB · power max 429.86 W
+  strict=90.0% http=120/120 wall=85s
+
+Wrote /Users/retajalbalawi/Downloads/SemaFailBench-without-F7-F8/results/f5-retest/campaign_manifest.json
