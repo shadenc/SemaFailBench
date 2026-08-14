@@ -1,0 +1,77 @@
+# F6 — Wrong / stale LoRA adapter.
+# Matched Qwen2.5 weights + tokenizer + chat template + generation defaults;
+# wrong domain-specific LoRA adapter mounted and routed in production.
+# Healthy baseline: configs/serving.yaml (no adapter)
+
+name: semafailbench-f6-lora-adapter
+fault_id: F6
+fault_name: Wrong / stale LoRA adapter
+deployment_kind: lora_adapter_mismatch_isolated
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+model:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+
+tokenizer:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+
+# Wrong-task adapter: tool-calling LoRA left on a general instruct endpoint.
+wrong_lora_adapter:
+  module_name: stale-tool-lora
+  repo: arvindcr4/tool-call-lora-qwen2.5-7b
+  max_lora_rank: 16
+  description: >
+    Realistic ops fault: a tool/agent LoRA remains mounted on the general Qwen2.5-7B-Instruct
+    serving slot while the gateway routes traffic to the adapter module instead of bare base.
+
+served_model_name: Qwen/Qwen2.5-7B-Instruct
+
+# Benchmark client targets the LoRA module alias (misconfigured production route).
+client_mode:
+  lora_module_name: stale-tool-lora
+  intended_base_model: Qwen/Qwen2.5-7B-Instruct
+
+healthy_reference:
+  repo: Qwen/Qwen2.5-7B-Instruct
+  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  dtype: bfloat16
+  lora: none
+  strict_pass_rate_mean: 0.925
+  client_decoding:
+    temperature: 0.0
+    seed: 0
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+  stochastic:
+    temperature: 0.7
+    top_p: 0.9
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1
+
+expected_infra:
+  http_error_rate: 0.0
+  restart_count: 0
+  notes:
+    - Base weights, tokenizer, and chat template match healthy; only LoRA adapter differs.
+    - vLLM --enable-lora with wrong-task adapter; HTTP 200 and GPU loaded expected.
+    - Client uses deterministic temp=0; semantic shift comes from adapter weights only.

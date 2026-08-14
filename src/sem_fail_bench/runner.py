@@ -33,6 +33,7 @@ def run_suite(
     dry_run: bool = False,
     warmup: bool = False,
     trust_server_decoding: bool = False,
+    exclude_canary_ids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     catalog = load_canaries()
     serving = load_serving_config()
@@ -51,6 +52,8 @@ def run_suite(
         random.Random(seed or 0).shuffle(canaries)
     if limit:
         canaries = canaries[:limit]
+    if exclude_canary_ids:
+        canaries = [c for c in canaries if c["id"] not in exclude_canary_ids]
 
     client = client or ServingClient()
     system_prompt = serving.get("system_prompt", "")

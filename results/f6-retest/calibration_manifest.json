@@ -1,0 +1,123 @@
+{
+  "phase": "calibration",
+  "timestamp_utc": "2026-08-14T12:20:29.359245+00:00",
+  "fault_id": "F6",
+  "pod_id": "n1c8ialve3lv6f",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "lora_module": "stale-tool-lora",
+  "lora_adapter_repo": "arvindcr4/tool-call-lora-qwen2.5-7b",
+  "intended_base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "run_id": "F6-lora-adapter-mismatch-20260814T122022Z-4f41d85f",
+  "excluded_canary_ids": [
+    "SFC-001",
+    "SFC-002",
+    "SFC-003",
+    "SFC-004",
+    "SFC-005"
+  ],
+  "n_calibration": 5,
+  "strict_pass_rate": 0.6,
+  "tolerant_pass_rate": 0.6,
+  "n": 5,
+  "http_200": 5,
+  "wall_s": 3.9139252770110033,
+  "warmup": false,
+  "global_warmup_done": true,
+  "latency": {
+    "n": 5,
+    "p50_ms": 619.2656640196219,
+    "p95_ms": 1397.2218870185316,
+    "max_ms": 1397.2218870185316
+  },
+  "capability_breakdown": {
+    "Capability 1: Instruction-following Fidelity": "3/5"
+  },
+  "strict_failures": [
+    {
+      "canary_id": "SFC-001",
+      "subtype": "Quantitative Constraint Compliance",
+      "note": 22
+    },
+    {
+      "canary_id": "SFC-004",
+      "subtype": "Quantitative Constraint Compliance",
+      "note": 6
+    }
+  ],
+  "infra_before": {
+    "api": {
+      "ok": true,
+      "timestamp_utc": "2026-08-14T12:20:21.725385+00:00",
+      "models_status": 200,
+      "model_ids": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "stale-tool-lora"
+      ],
+      "health_status": 200,
+      "metrics_status": 200,
+      "metrics_lines": 601
+    }
+  },
+  "infra_during": {
+    "gpu_sampler": {
+      "ok": true,
+      "n_samples": 2,
+      "interval_s": 2.0,
+      "util_gpu_pct_max": 88.0,
+      "util_gpu_pct_mean": 44.0,
+      "util_gpu_pct_last": 0.0,
+      "util_mem_pct_max": 74.0,
+      "util_mem_pct_mean": 37.0,
+      "util_mem_pct_last": 0.0,
+      "memory_used_mib_max": 29688.0,
+      "memory_used_mib_mean": 29688.0,
+      "memory_used_mib_last": 29688.0,
+      "temperature_c_max": 33.0,
+      "temperature_c_mean": 32.0,
+      "temperature_c_last": 31.0,
+      "power_w_max": 241.54,
+      "power_w_mean": 174.20999999999998,
+      "power_w_last": 106.88,
+      "name": "NVIDIA GeForce RTX 5090",
+      "memory_total_mib": 32607.0
+    }
+  },
+  "infra_after": {
+    "gpu": {
+      "timestamp_utc": "2026-08-14T12:20:27.475512+00:00",
+      "ok": true,
+      "exit_code": 0,
+      "raw": "0, NVIDIA GeForce RTX 5090, 0, 0, 29688, 32607, 31, 64.15, 580.159.03\n2998 python3 -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-7B-Instruct --revision a09a35458c702b33eeacc393d103063234e8bc28 --served-model-name Qwen/Qwen2.5-7B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --enable-lora --max-lora-rank 16 --max-loras 1 --lora-modules stale-tool-lora=arvindcr4/tool-call-lora-qwen2.5-7b",
+      "gpu": {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "util_gpu_pct": 0.0,
+        "util_mem_pct": 0.0,
+        "memory_used_mib": 29688.0,
+        "memory_total_mib": 32607.0,
+        "temperature_c": 31.0,
+        "power_w": 64.15,
+        "driver_version": "580.159.03"
+      },
+      "vllm_process": "2998 python3 -m vllm.entrypoints.openai.api_server --model Qwen/Qwen2.5-7B-Instruct --revision a09a35458c702b33eeacc393d103063234e8bc28 --served-model-name Qwen/Qwen2.5-7B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --enable-lora --max-lora-rank 16 --max-loras 1 --lora-modules stale-tool-lora=arvindcr4/tool-call-lora-qwen2.5-7b"
+    },
+    "vllm_metrics": {
+      "timestamp_utc": "2026-08-14T12:20:29.049295+00:00",
+      "ok": true,
+      "status": 200,
+      "values": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:prompt_tokens_total": 10132.0,
+        "vllm:generation_tokens_total": 3195.0,
+        "vllm:time_to_first_token_seconds": 1786709603.5533109,
+        "vllm:e2e_request_latency_seconds": 1786709603.553378
+      }
+    }
+  },
+  "artifacts": {
+    "results_jsonl": "results/f6-retest/calibration_F6-lora-adapter-mismatch-20260814T122022Z-4f41d85f.jsonl",
+    "results_meta": "results/f6-retest/calibration_F6-lora-adapter-mismatch-20260814T122022Z-4f41d85f.meta.json"
+  }
+}

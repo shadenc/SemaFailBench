@@ -1,0 +1,17 @@
+{
+  "run_id": "F6-lora-adapter-mismatch-20260814T131059Z-f70cd653",
+  "condition": "F6-lora-adapter-mismatch",
+  "condition_regime": "deterministic",
+  "n": 120,
+  "strict_pass_rate": 0.8666666666666667,
+  "tolerant_pass_rate": 0.8916666666666667,
+  "config_hash": "ceb012cf4104286ccc7dc447e2b809455e6740a1b35ea73ec163957a8c90391a",
+  "artifact_hashes": {
+    "canaries_yaml": "1e8896c9449b17a75a0251713bb13bc17bc86bb2fd0b6666b0fdf34018efedd6",
+    "faults_yaml": "e6d31ed7267c5a15f82672c152f5d3d88e02ec78e4a3db114781ab4de162031e",
+    "serving_yaml": "fad1efdb10224845cc3bcbe4d747842bca2edaf67a2365512936f064a29632e9",
+    "extra_objects": "aabeea9a6d2ca6a68dfc05be80f55574e8c0e416456434891d23207b3928b781",
+    "bundle": "ceb012cf4104286ccc7dc447e2b809455e6740a1b35ea73ec163957a8c90391a"
+  },
+  "catalog_hash": "4db3a64fa545e7aca2d21436f1e5af90e4e84da30da5f5cfeb404e810cfc51b3"
+}

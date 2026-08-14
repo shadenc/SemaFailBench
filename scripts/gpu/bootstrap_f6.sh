@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# From the Mac: inject F6 (wrong LoRA adapter only) on RunPod.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
+export SFB_RUNPOD_SSH="${SFB_RUNPOD_SSH:-n1c8ialve3lv6f-6441227f@ssh.runpod.io}"
+export SFB_RUNPOD_KEY="${SFB_RUNPOD_KEY:-$HOME/.ssh/sfb_runpod}"
+export SFB_F6_MODEL="${SFB_F6_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_F6_MODEL_REVISION="${SFB_F6_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
+export SFB_F6_LORA_REPO="${SFB_F6_LORA_REPO:-arvindcr4/tool-call-lora-qwen2.5-7b}"
+export SFB_F6_LORA_MODULE="${SFB_F6_LORA_MODULE:-stale-tool-lora}"
+export SFB_F6_MAX_LORA_RANK="${SFB_F6_MAX_LORA_RANK:-16}"
+export SFB_F6_SERVED_MODEL_NAME="${SFB_F6_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
+export SFB_HEALTHY_REVISION="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
+PUBKEY="$(cat "${SFB_RUNPOD_KEY}.pub")"
+REMOTE="$ROOT/scripts/gpu/remote_bootstrap_f6.sh"
+TCP_HOST="${SFB_RUNPOD_TCP_HOST:-}"
+TCP_PORT="${SFB_RUNPOD_TCP_PORT:-22}"
+POD_WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
+if [[ -n "$TCP_HOST" ]]; then
+  scp -o BatchMode=yes -o ConnectTimeout=20 -i "$SFB_RUNPOD_KEY" -P "$TCP_PORT" \
+    "$ROOT/scripts/serving_artifact_probe.py" "root@${TCP_HOST}:${POD_WORKDIR}/serving_artifact_probe.py"
+fi
+echo "Injecting isolated F6 (wrong LoRA adapter, matched base weights+tokenizer) via PTY SSH ($SFB_RUNPOD_SSH)"
+echo "  base=$SFB_F6_MODEL revision=$SFB_F6_MODEL_REVISION"
+echo "  lora=$SFB_F6_LORA_MODULE repo=$SFB_F6_LORA_REPO rank=$SFB_F6_MAX_LORA_RANK"
+{
+  printf 'export SFB_PUBKEY=%q\n' "$PUBKEY"
+  printf 'export SFB_F6_MODEL=%q\n' "$SFB_F6_MODEL"
+  printf 'export SFB_F6_MODEL_REVISION=%q\n' "$SFB_F6_MODEL_REVISION"
+  printf 'export SFB_F6_LORA_REPO=%q\n' "$SFB_F6_LORA_REPO"
+  printf 'export SFB_F6_LORA_MODULE=%q\n' "$SFB_F6_LORA_MODULE"
+  printf 'export SFB_F6_MAX_LORA_RANK=%q\n' "$SFB_F6_MAX_LORA_RANK"
+  printf 'export SFB_F6_SERVED_MODEL_NAME=%q\n' "$SFB_F6_SERVED_MODEL_NAME"
+  printf 'export SFB_HEALTHY_REVISION=%q\n' "$SFB_HEALTHY_REVISION"
+  printf 'export MODEL=%q\n' "$SFB_F6_MODEL"
+  printf 'export REV=%q\n' "$SFB_F6_MODEL_REVISION"
+  printf 'export SERVED_NAME=%q\n' "$SFB_F6_SERVED_MODEL_NAME"
+  printf 'export LORA_REPO=%q\n' "$SFB_F6_LORA_REPO"
+  printf 'export LORA_MODULE=%q\n' "$SFB_F6_LORA_MODULE"
+  printf 'export MAX_LORA_RANK=%q\n' "$SFB_F6_MAX_LORA_RANK"
+  printf 'export SFB_PORT=%q\n' "${SFB_PORT:-8000}"
+  printf 'export SFB_HEALTHY_GPU=%q\n' "${SFB_HEALTHY_GPU:-0}"
+  printf 'export SFB_POD_WORKDIR=%q\n' "${SFB_POD_WORKDIR:-/workspace/semafailbench}"
+  cat "$REMOTE"
+} | python3 "$ROOT/scripts/gpu/ssh_run.py" --timeout "${SFB_BOOTSTRAP_TIMEOUT:-3600}"
