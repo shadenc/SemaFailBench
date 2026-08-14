@@ -10,10 +10,10 @@ max_new_tokens: 256
 gpu_memory_utilization: 0.90
 
 model:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
-  tokenizer_repo: Qwen/Qwen2.5-7B-Instruct
-  tokenizer_revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  tokenizer_repo: meta-llama/Llama-3.1-8B-Instruct
+  tokenizer_revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.
@@ -43,7 +43,7 @@ quantization:
 
 retrieval:
   embedding_model: BAAI/bge-m3
-  embedding_revision: TBD_PIN_AT_DOWNLOAD
+  embedding_revision: 0e9e39f249a16976918f6564b8830bc894c89659
   corpus_version: v1
   top_k: 3
   reranker: none
@@ -53,7 +53,7 @@ hardware:
   # Observed on RunPod pod qp386qvf6p72gg (2026-08-09): 1x RTX 5090, 32607 MiB,
   # driver 580.159.03, image CUDA 12.8.1, vLLM 0.26.0, torch 2.11.0+cu130.
   # Do not claim 2x on this pod.
-  gpus: 1x RTX 5090 (pod qp386qvf6p72gg)
+  gpus: 1x RTX 5090 (pod 840367vgcj90lr)
   allocation:
     gpu0: healthy server (this pod)
     gpu1: not present — faulty twin needs a second pod or a later swap on gpu0

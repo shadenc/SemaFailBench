@@ -136,6 +136,8 @@ def main() -> int:
 
     dtype_same = "bfloat16" in vllm_proc or "--dtype bfloat16" in vllm_proc
     lora_same = "--lora" not in vllm_proc and "--enable-lora" not in vllm_proc
+    quantization_same = "--quantization" not in vllm_proc
+    generation_same = "--override-generation-config" not in vllm_proc
     isolation_probe = pins_f4.get("isolation_probe") or {}
 
     wrong_template_served = (
@@ -154,6 +156,8 @@ def main() -> int:
         and served_template_differs
         and served_token_ids_differ
         and dtype_same
+        and quantization_same
+        and generation_same
         and lora_same
     )
 
@@ -170,6 +174,8 @@ def main() -> int:
         "served_token_ids_differ": served_token_ids_differ,
         "token_ids_in_tokenizer_files_same_as_healthy": tokenize_cmp["token_ids_equal"],
         "dtype_same_as_healthy": dtype_same,
+        "quantization_same_as_healthy": quantization_same,
+        "generation_same_as_healthy": generation_same,
         "lora_same_as_healthy": lora_same,
         "wrong_template_served_via_vllm_flag": wrong_template_served,
         "vllm_command": vllm_proc,
@@ -178,6 +184,7 @@ def main() -> int:
         "isolation_probe": isolation_probe,
         "api_check": api,
         "isolated": isolated,
+        "verdict": "ISOLATED" if isolated else "CONFOUNDED",
         "notes": (
             "F4 isolated: matched weights+tokenizer; vLLM --chat-template points at wrong family template."
             if isolated

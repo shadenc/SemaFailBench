@@ -1,0 +1,23 @@
+{
+  "timestamp_utc": "2026-08-14T15:56:36.457762+00:00",
+  "fault_id": "F1",
+  "fault_name": "Quantization regression",
+  "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+  "model_repo": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+  "quantization": "awq_marlin",
+  "healthy_reference_repo": "meta-llama/Llama-3.1-8B-Instruct",
+  "healthy_reference_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+  "port": "8000",
+  "healthy_gpu": "0",
+  "nvidia_smi_before_load": "0, NVIDIA GeForce RTX 5090, 2 MiB, 32607 MiB, 580.173.02",
+  "torch_version": "2.13.0+cu130",
+  "vllm_version": "0.27.1",
+  "transformers_version": "5.15.0",
+  "model_local_path": "/workspace/.cache/huggingface/hub/models--hugging-quants--Meta-Llama-3.1-8B-Instruct-AWQ-INT4/snapshots/db1f81ad4b8c7e39777509fac66c652eb0a52f91",
+  "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
+  "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+  "tokenizer_local_path": "/workspace/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+  "model_revision": "db1f81ad4b8c7e39777509fac66c652eb0a52f91",
+  "model_id": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+  "nvidia_smi_after_load": "0, NVIDIA GeForce RTX 5090, 29616 MiB, 32607 MiB, 0 %"
+}

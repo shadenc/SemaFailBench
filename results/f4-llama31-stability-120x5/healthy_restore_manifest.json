@@ -1,0 +1,181 @@
+{
+  "phase": "healthy_restore_verification",
+  "timestamp_utc": "2026-08-14T17:08:31.349462+00:00",
+  "frozen_spec": {
+    "model_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": "8192",
+    "gpu_memory_utilization": "0.90"
+  },
+  "api": {
+    "ok": true,
+    "timestamp_utc": "2026-08-14T17:08:30.750215+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "meta-llama/Llama-3.1-8B-Instruct"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 582
+  },
+  "matches_frozen": true,
+  "verified": true,
+  "infra": {
+    "gpu": {
+      "timestamp_utc": "2026-08-14T17:08:31.349567+00:00",
+      "ok": true,
+      "exit_code": 0,
+      "raw": "0, NVIDIA GeForce RTX 5090, 0, 0, 29684, 32607, 27, 12.18, 580.173.02\n12343 python3 -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.1-8B-Instruct --revision 0e9e39f249a16976918f6564b8830bc894c89659 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager",
+      "gpu": {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "util_gpu_pct": 0.0,
+        "util_mem_pct": 0.0,
+        "memory_used_mib": 29684.0,
+        "memory_total_mib": 32607.0,
+        "temperature_c": 27.0,
+        "power_w": 12.18,
+        "driver_version": "580.173.02"
+      },
+      "vllm_process": "12343 python3 -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.1-8B-Instruct --revision 0e9e39f249a16976918f6564b8830bc894c89659 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager"
+    },
+    "vllm_metrics": {
+      "timestamp_utc": "2026-08-14T17:08:33.136595+00:00",
+      "ok": true,
+      "status": 200,
+      "values": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:prompt_tokens_total": 0.0,
+        "vllm:generation_tokens_total": 0.0,
+        "vllm:time_to_first_token_seconds": 1786726761.0142362,
+        "vllm:e2e_request_latency_seconds": 1786726761.0143049
+      }
+    }
+  },
+  "pins": {
+    "timestamp_utc": "2026-08-14T16:58:25.384801+00:00",
+    "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+    "executable": "/usr/bin/python3",
+    "model_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "model_revision_requested": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "tokenizer_revision_requested": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "healthy_gpu": "0",
+    "port": "8000",
+    "cuda_version_env": "12.8.1",
+    "nvidia_visible_devices_at_pin": "0",
+    "gpu_count_observed": 1,
+    "nvidia_smi": "0, NVIDIA GeForce RTX 5090, 32607 MiB, 580.173.02",
+    "torch_version": "2.13.0+cu130",
+    "torch_cuda": "13.0",
+    "cuda_available": true,
+    "device_count": 1,
+    "gpu_names": [
+      "NVIDIA GeForce RTX 5090"
+    ],
+    "vllm_version": "0.27.1",
+    "transformers_version": "5.15.0",
+    "model_local_path": "/workspace/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_local_path": "/workspace/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+    "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659"
+  },
+  "tokenizer_probe": {
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+    "file_hashes": {
+      "tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+      "vocab.json": null,
+      "merges.txt": null,
+      "tokenizer_config.json": "177c7b61e616fecb84c17ce0591acb92c6c4d60e9ac5ababfb940ff23bbcd424",
+      "special_tokens_map.json": "6f38c73729248f6c127296386e3cdde96e254636cc58b4169d3fd32328d9a8ec"
+    },
+    "chat_template": {
+      "present": true,
+      "hash": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+      "length": 4614
+    },
+    "bundle_hash": "157d26358c5c72da61c14bc8effe70c47083c05e941216b9f30d4fd545ce0247",
+    "tokenize_probe": {
+      "vocab_len": 128256,
+      "token_ids": [
+        128000,
+        128006,
+        9125,
+        128007,
+        271,
+        38766,
+        1303,
+        33025,
+        2696,
+        25,
+        6790,
+        220,
+        2366,
+        18,
+        198,
+        15724,
+        2696,
+        25,
+        220,
+        1627,
+        10263,
+        220,
+        2366,
+        19,
+        271,
+        2675,
+        527,
+        264,
+        16994,
+        18328,
+        13,
+        128009,
+        128006,
+        882,
+        128007,
+        271,
+        21509,
+        449,
+        7041,
+        2380,
+        4339,
+        13,
+        128009,
+        128006,
+        78191,
+        128007,
+        271
+      ],
+      "token_ids_hash": "75e78cd67f4447d15891e33ce3d88db030f3e8aeaef184af48167259c9cb14b0",
+      "decode_prefix": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nCutting Knowledge Date: December 2023\nToday Date: 26 Jul 2024\n\nYou are a careful assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nReply with exactly three"
+    }
+  },
+  "checks": {
+    "api_http_200": true,
+    "model_id_expected": true,
+    "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "revision_matches_frozen": true
+  },
+  "serving": {
+    "model_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
+    "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": 8192,
+    "gpu_memory_utilization": 0.9,
+    "vllm_version": "0.27.1",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "vllm_command": "12343 python3 -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.1-8B-Instruct --revision 0e9e39f249a16976918f6564b8830bc894c89659 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager"
+  },
+  "chat_template_hash": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+  "tokenizer_bundle_hash": "157d26358c5c72da61c14bc8effe70c47083c05e941216b9f30d4fd545ce0247"
+}

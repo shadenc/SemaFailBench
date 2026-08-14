@@ -1,6 +1,6 @@
 # F2 — Model / checkpoint version regression serving envelope.
-# Wrong model-version artifact: Qwen2 generation served where Qwen2.5 is expected.
-# Healthy baseline: configs/serving.yaml (Qwen/Qwen2.5-7B-Instruct @ a09a354…)
+# Wrong model-version artifact: Llama 3 served where Llama 3.1 is expected.
+# Healthy baseline: configs/serving.yaml (Llama-3.1-8B-Instruct @ 0e9e39f…)
 
 name: semafailbench-f2-checkpoint-version
 fault_id: F2
@@ -14,27 +14,29 @@ dtype: bfloat16
 
 # Logical model identity the client and scorer expect (matches healthy).
 expected_model:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
 # Actual weights loaded on the pod (older family release).
 actual_model:
-  repo: Qwen/Qwen2-7B-Instruct
-  revision: f2826a00ceef68f0f2b946d945ecc0477ce4450c
+  repo: NousResearch/Meta-Llama-3-8B-Instruct
+  revision: 53346005fb0ef11d3b6a83b12c895cca40156b6c
+  upstream_repo: meta-llama/Meta-Llama-3-8B-Instruct
+  provenance_note: Public mirror of the upstream Meta Llama 3 Instruct checkpoint.
 
 # Frozen healthy tokenizer/chat-template — MUST NOT change for isolated F2.
 tokenizer:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
 # vLLM --served-model-name: API clients see the expected logical id.
-served_model_name: Qwen/Qwen2.5-7B-Instruct
+served_model_name: meta-llama/Llama-3.1-8B-Instruct
 
 healthy_reference:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
   dtype: bfloat16
-  strict_pass_rate_mean: 0.925
+  strict_pass_rate_mean: 0.9666666666666667
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.
@@ -62,6 +64,6 @@ expected_infra:
   http_error_rate: 0.0
   restart_count: 0
   notes:
-    - Wrong model-version artifact: Qwen2 weights with frozen Qwen2.5 tokenizer + chat template.
+    - Wrong model-version artifact: Llama 3 weights with frozen Llama 3.1 tokenizer + chat template.
     - Not F3 (tokenizer mismatch) or F4 (chat-template mismatch) — only checkpoint changes.
     - Infra should remain flat (HTTP 200, GPU loaded).

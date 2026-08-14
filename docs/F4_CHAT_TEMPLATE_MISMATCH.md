@@ -1,115 +1,96 @@
 # F4 — Chat-Template Mismatch
 
-**Fault:** Incorrect conversation template applied at serving time. Weights and tokenizer stay matched to healthy Qwen2.5; only vLLM `--chat-template` points at a wrong-family template.
+**Fault:** Incorrect conversation template applied at serving time. Weights and tokenizer stay matched to healthy Llama 3.1; only vLLM `--chat-template` points at an edited Llama template with the assistant generation header removed.
 
 **Distinct from:**
 - **F2** — checkpoint/weights change
-- **F3** — tokenizer files change (skipped for now)
+- **F3** — tokenizer files change (**skipped** — often operationally noisy and confounds template measurement)
 
 ## Isolation design
 
 | Artifact | Healthy | F4 |
 |---|---|---|
-| Model weights | Qwen2.5-7B-Instruct @ `a09a354…` | Same |
-| Tokenizer files | Qwen2.5 @ `a09a354…` | Same |
-| Chat template at serve | Bundled Qwen ChatML | **Mistral [INST] template** via `--chat-template` |
+| Model weights | `meta-llama/Llama-3.1-8B-Instruct` @ `0e9e39f…` | Same |
+| Tokenizer files | same repo @ `0e9e39f…` | Same |
+| Chat template at serve | Official Llama header template | **Official template minus `add_generation_prompt` block** via `--chat-template` |
 
-Wrong template source (default): `mistralai/Mistral-7B-Instruct-v0.3` — tokenizer-only download on pod (`allow_patterns` for `tokenizer_config.json`).
+Wrong template source: `configs/f4_wrong_chat_template_no_gen_prompt.jinja`
+(generated from the official Llama 3.1 `tokenizer_config.json` by deleting the final assistant generation header).
 
-## Local files (ready before pod recharge)
+## Local files
 
 | Path | Purpose |
 |---|---|
 | `configs/serving_f4.yaml` | F4 serving envelope + preflight gates |
+| `configs/f4_wrong_chat_template_no_gen_prompt.jinja` | Exact wrong template |
 | `scripts/gpu/bootstrap_f4.sh` | Mac → pod inject |
 | `scripts/gpu/remote_bootstrap_f4.sh` | Pod-side stop + F4 vLLM |
 | `scripts/verify_f4_isolation.py` | Isolation gate → `f4_isolation_manifest.json` |
-| `scripts/run_fault_f4_stability.py` | Preflight + 120×20 campaign |
-| `results/f4-retest/` | Output dir (empty until runs complete) |
+| `scripts/run_fault_f4_stability.py` | Preflight + 120×5 campaign |
+| `results/f4-llama31-stability-120x5/` | Campaign outputs |
 
-## Pod state at pause (2026-08-12)
+## Protocol
 
-- **Pod:** `e0062jv6mdqq7w` — **stopped / needs recharge**
-- Last successful step: `restore_healthy.sh` started vLLM (pid 9706) but local tunnel never saw `/v1/models` before pod died
-- **F4 not injected yet** — no `pins_f4.json`, no preflight, no isolation manifest
-- **F3 skipped** — artifacts kept locally for reference only
-
-## Resume after recharge
-
-### 1. Update `.env` if pod was recreated
-
-From RunPod Connect tab, set:
+### 1. Restore healthy + verify
 
 ```bash
-SFB_RUNPOD_SSH=<pod-id>@ssh.runpod.io
-SFB_RUNPOD_TCP_HOST=<ip>
-SFB_RUNPOD_TCP_PORT=<port>
-```
-
-Current values (last working session):
-
-```
-SFB_RUNPOD_SSH=e0062jv6mdqq7w-644120e5@ssh.runpod.io
-SFB_RUNPOD_TCP_HOST=213.173.103.226
-SFB_RUNPOD_TCP_PORT=27001
-```
-
-### 2. Restore healthy + verify
-
-```bash
-bash scripts/gpu/restore_healthy.sh          # ~2–5 min model load
-bash scripts/gpu/tunnel.sh                   # separate terminal, keep open
+bash scripts/gpu/restore_healthy.sh
+bash scripts/gpu/tunnel.sh
 python3 scripts/verify_healthy_restore.py \
-  --out results/f4-retest/healthy_restore_manifest.json
+  --out results/f4-llama31-stability-120x5/healthy_restore_manifest.json
 ```
 
-Wait until `curl -s http://127.0.0.1:8000/v1/models` returns JSON.
-
-### 3. Inject F4
+### 2. Inject F4
 
 ```bash
-bash scripts/gpu/bootstrap_f4.sh             # ~3–8 min (Mistral template download + load)
+bash scripts/gpu/bootstrap_f4.sh
 python3 scripts/verify_f4_isolation.py \
-  --out results/f4-retest/f4_isolation_manifest.json
+  --healthy-manifest results/f4-llama31-stability-120x5/healthy_restore_manifest.json \
+  --out results/f4-llama31-stability-120x5/f4_isolation_manifest.json
 ```
 
 Gate must show `"isolated": true`:
-- tokenizer files identical to healthy
+- weights/tokenizer files identical to healthy
 - `--chat-template` → `f4_wrong_chat_template.jinja`
 - served token IDs differ from healthy template
 
-### 4. Preflight (120 canaries, one pass)
+### 3. Preflight (120 canaries, one pass)
 
 ```bash
-python3 scripts/run_fault_f4_stability.py --preflight-only
+python3 scripts/run_fault_f4_stability.py --preflight-only \
+  --out-dir results/f4-llama31-stability-120x5
 ```
 
-Proceed to 20× only if preflight shows directional degradation + `delta_F4 ≥ 1%` or canary swaps.
+Proceed to 5× only if preflight shows directional degradation.
 
-### 5. Full campaign (optional)
+### 4. Full campaign
 
 ```bash
-python3 scripts/run_fault_f4_stability.py --repeats 20
+python3 scripts/run_fault_f4_stability.py --repeats 5 \
+  --out-dir results/f4-llama31-stability-120x5
 ```
+
+Outputs:
+- `results/f4-llama31-stability-120x5/`
+- `docs/F4_CHAT_TEMPLATE_MISMATCH_STABILITY_120x5.md`
 
 ## Env vars (F4)
 
 ```bash
-SFB_F4_MODEL=Qwen/Qwen2.5-7B-Instruct
-SFB_F4_MODEL_REVISION=a09a35458c702b33eeacc393d103063234e8bc28
-SFB_F4_TOKENIZER=Qwen/Qwen2.5-7B-Instruct
-SFB_F4_TOKENIZER_REVISION=a09a35458c702b33eeacc393d103063234e8bc28
-SFB_F4_TEMPLATE_SOURCE=mistralai/Mistral-7B-Instruct-v0.3
-SFB_F4_SERVED_MODEL_NAME=Qwen/Qwen2.5-7B-Instruct
+SFB_F4_MODEL=meta-llama/Llama-3.1-8B-Instruct
+SFB_F4_MODEL_REVISION=0e9e39f249a16976918f6564b8830bc894c89659
+SFB_F4_TOKENIZER=meta-llama/Llama-3.1-8B-Instruct
+SFB_F4_TOKENIZER_REVISION=0e9e39f249a16976918f6564b8830bc894c89659
+SFB_F4_TEMPLATE_FILE=configs/f4_wrong_chat_template_no_gen_prompt.jinja
+SFB_F4_TEMPLATE_SOURCE=local:no_assistant_gen_prompt
+SFB_F4_SERVED_MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
 ```
 
 ## Healthy baseline reference
 
-- `results/healthy-stability-120x20-v2/` — **92.5% strict** mean (20× locked)
+- `results/healthy-stability-120x5-llama31/` — **96.7% strict** mean (5× locked)
 - Compare `delta_F4 = healthy_mean − f4_mean`
 
-## Notes
+## Why F3 is skipped
 
-- Use **direct TCP SSH** (`SFB_RUNPOD_TCP_*`) for bootstrap; proxy SSH can drop on long installs.
-- Pod disk: prefer `/workspace` cache; Mistral bootstrap uses tokenizer-only snapshot.
-- Do not commit `.env` (secrets/pod-specific).
+F3 (tokenizer–checkpoint mismatch) often produces loud operational/token-id failures rather than clean silent semantic drift, and it confounds clean F4 isolation. Leader protocol skips it for this campaign set.

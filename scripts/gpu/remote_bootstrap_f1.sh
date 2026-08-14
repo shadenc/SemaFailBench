@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops healthy vLLM, starts F1 AWQ-quantized server.
 set +e
-MODEL="${SFB_F1_MODEL:-Qwen/Qwen2.5-7B-Instruct-AWQ}"
-QUANT="${SFB_F1_QUANTIZATION:-awq}"
+MODEL="${SFB_F1_MODEL:-hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4}"
+REV="${SFB_F1_REVISION:-db1f81ad4b8c7e39777509fac66c652eb0a52f91}"
+QUANT="${SFB_F1_QUANTIZATION:-awq_marlin}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-HEALTHY_MODEL="${SFB_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-export WORKDIR MODEL QUANT PORT GPU HEALTHY_MODEL
+HEALTHY_MODEL="${SFB_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+HEALTHY_REV="${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}"
+export WORKDIR MODEL REV QUANT PORT GPU HEALTHY_MODEL HEALTHY_REV
 
 mkdir -p "$WORKDIR" /root/.ssh
 chmod 700 /root/.ssh
@@ -22,6 +24,8 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
@@ -48,9 +52,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct-AWQ")
-quant = os.environ.get("QUANT", "awq")
-healthy = os.environ.get("HEALTHY_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+model = os.environ.get("MODEL", "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
+requested_rev = os.environ.get("REV") or None
+quant = os.environ.get("QUANT", "awq_marlin")
+healthy = os.environ.get("HEALTHY_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 
 pins = {
     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -60,6 +65,7 @@ pins = {
     "model_repo": model,
     "quantization": quant,
     "healthy_reference_repo": healthy,
+    "healthy_reference_revision": os.environ.get("HEALTHY_REV"),
     "port": os.environ.get("PORT", "8000"),
     "healthy_gpu": os.environ.get("GPU", "0"),
 }
@@ -80,10 +86,25 @@ for name in ("torch", "vllm", "transformers"):
         pins[f"{name}_error"] = str(exc)
 
 from huggingface_hub import snapshot_download, HfApi
-path = snapshot_download(model, local_files_only=False)
+path = snapshot_download(model, revision=requested_rev, local_files_only=False)
 pins["model_local_path"] = path
+healthy_rev = os.environ.get("HEALTHY_REV") or None
+healthy_path = snapshot_download(
+    healthy,
+    revision=healthy_rev,
+    allow_patterns=[
+        "tokenizer*",
+        "special_tokens_map.json",
+        "generation_config.json",
+        "config.json",
+    ],
+    local_files_only=False,
+)
+pins["tokenizer_repo"] = healthy
+pins["tokenizer_revision"] = healthy_rev
+pins["tokenizer_local_path"] = healthy_path
 try:
-    info = HfApi().model_info(model)
+    info = HfApi().model_info(model, revision=requested_rev)
     pins["model_revision"] = info.sha
     pins["model_id"] = info.id
 except Exception as exc:
@@ -94,7 +115,9 @@ print(json.dumps(pins, indent=2))
 PY
 
 REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f1.json')).get('model_revision') or '')")
+TOKENIZER_PATH=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f1.json')).get('tokenizer_local_path') or '')")
 echo "f1_model_revision=${REV:-unpinned}"
+echo "f1_tokenizer_path=${TOKENIZER_PATH}"
 
 echo "Starting F1 vLLM AWQ on GPU $GPU port $PORT"
 nohup env \
@@ -105,6 +128,7 @@ nohup env \
   python3 -m vllm.entrypoints.openai.api_server \
   --model "$MODEL" \
   ${REV:+--revision "$REV"} \
+  --tokenizer "$TOKENIZER_PATH" \
   --quantization "$QUANT" \
   --host 127.0.0.1 \
   --port "$PORT" \

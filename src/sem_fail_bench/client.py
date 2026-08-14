@@ -21,7 +21,7 @@ class ServingClient:
             "/"
         )
         self.api_key = api_key or os.getenv("SFB_API_KEY") or "EMPTY"
-        self.model = model or os.getenv("SFB_MODEL") or "Qwen/Qwen2.5-7B-Instruct"
+        self.model = model or os.getenv("SFB_MODEL") or "meta-llama/Llama-3.1-8B-Instruct"
         self.timeout = timeout
 
     def health(self) -> dict[str, Any]:

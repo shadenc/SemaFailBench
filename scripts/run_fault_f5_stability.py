@@ -45,7 +45,7 @@ strict_failures = _rhs.strict_failures
 expand = _rhs.expand
 load_existing_runs = _rhs.load_existing_runs
 
-DEFAULT_OUT = REPO_ROOT / "results" / "f5-retest"
+DEFAULT_OUT = REPO_ROOT / "results" / "f5-llama31-stability-120x5"
 PREFLIGHT_MANIFEST = "preflight_manifest.json"
 ISOLATION_MANIFEST = "f5_isolation_manifest.json"
 HEALTHY_RESTORE_MANIFEST = "healthy_restore_manifest.json"
@@ -58,7 +58,7 @@ def load_f5_config() -> dict:
 def f5_models(f5_cfg: dict) -> tuple[str, str, str, str]:
     model = os.getenv(
         "SFB_F5_MODEL",
-        f5_cfg.get("model", {}).get("repo", "Qwen/Qwen2.5-7B-Instruct"),
+        f5_cfg.get("model", {}).get("repo", "meta-llama/Llama-3.1-8B-Instruct"),
     )
     revision = os.getenv(
         "SFB_F5_MODEL_REVISION",
@@ -76,14 +76,22 @@ def f5_models(f5_cfg: dict) -> tuple[str, str, str, str]:
 
 
 def load_healthy_baseline() -> dict | None:
-    path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "campaign_manifest.json"
+    path = (
+        REPO_ROOT
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / "campaign_manifest.json"
+    )
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def healthy_run1_failures() -> set[str]:
-    path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "run_01_manifest.json"
+    path = (
+        REPO_ROOT
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / "run_01_manifest.json"
+    )
     if not path.exists():
         return set()
     return {f["canary_id"] for f in json.loads(path.read_text())["strict_failures"]}
@@ -105,7 +113,7 @@ def evaluate_f5_preflight(
     h_rate = float(
         (healthy or {}).get("strict_pass_rate_mean")
         or f5_cfg.get("healthy_reference", {}).get("strict_pass_rate_mean")
-        or 0.925
+        or 0.9666666666666667
     )
     h_fails = healthy_run1_failures()
     regressions, recoveries, stable_fail = canary_delta(h_fails, f5_fail_ids)
@@ -339,6 +347,7 @@ def _healthy_f5_delta(out_dir: Path) -> tuple[list[str], list[str], list[str]]:
 
 def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None) -> str:
     runs = campaign["runs"]
+    n_planned = int(campaign.get("n_planned") or len(runs))
     model = campaign.get("model", f5_cfg["model"]["repo"])
     override_source = campaign.get(
         "generation_override_source",
@@ -352,7 +361,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
         iso = json.loads(iso_path.read_text(encoding="utf-8"))
 
     lines = [
-        "# F5 — Decoding-config drift (isolated) · 120 core × 20 server-default passes",
+        f"# F5 — Decoding-config drift (isolated) · 120 core × {n_planned} server-default passes",
         "",
         f"**Campaign id:** `{campaign['campaign_id']}`",
         f"**Fault:** F5 — wrong server generation defaults at serve time; matched weights + tokenizer",
@@ -365,7 +374,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
         "> Isolated F5: only vLLM --override-generation-config differs. Weights, tokenizer, and chat template verified identical to healthy.",
-        "> Compare per-canary jsonl vs healthy v2 in `results/healthy-stability-120x20-v2/`.",
+        f"> Compare per-canary jsonl vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
     ]
     if iso:
@@ -377,11 +386,14 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
                 "",
                 "| Check | Result |",
                 "|---|---|",
-                f"| Checkpoint changed | {iso.get('checkpoint_changed')} |",
-                f"| Tokenizer identical to healthy | {iso.get('tokenizer_same_as_healthy')} |",
+                f"| Weights unchanged | {iso.get('weights_unchanged')} |",
+                f"| Tokenizer files identical to healthy | {iso.get('tokenizer_files_same_as_healthy')} |",
                 f"| Chat template identical to healthy | {iso.get('chat_template_same_as_healthy')} |",
                 f"| Token IDs identical to healthy | {iso.get('token_ids_same_as_healthy')} |",
+                f"| Generation override differs from healthy | {iso.get('generation_config_differs_from_healthy')} |",
+                f"| Generation override matches fault spec | {iso.get('generation_override_matches_spec')} |",
                 f"| dtype identical | {iso.get('dtype_same_as_healthy')} |",
+                f"| Quantization identical (none) | {iso.get('quantization_same_as_healthy')} |",
                 f"| LoRA identical (none) | {iso.get('lora_same_as_healthy')} |",
                 "",
                 f"**Wrong generation override:** `{iso.get('wrong_generation_override')}`",
@@ -396,9 +408,9 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
             f"- Isolated generation override from `{override_source}` on `{model}` weights+tokenizer+template",
             f"- vLLM `--served-model-name {model}`",
             "- 120 core canaries (SFC-001 … SFC-120), catalog order; client omits temperature/seed (trust_server_decoding)",
-            "- Preflight: one deterministic pass before 20× campaign",
+            f"- Preflight: one server-default pass before {n_planned}× campaign",
             "- Run 1: 5 warmup requests discarded, then 120 measured",
-            "- Runs 2–20: 120 measured each (no warmup)",
+            f"- Runs 2–{n_planned}: 120 measured each (no warmup)" if n_planned > 1 else "- Single scored run after warmup",
             "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
             "",
         ]
@@ -413,7 +425,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
                 f"**Run id:** `{preflight.get('run_id', '?')}`",
                 f"**Note:** {ev.get('preflight_note', '?')}",
                 f"**Directional degradation:** {ev.get('directional_degradation')}",
-                f"**Recommend 20× campaign:** {ev.get('proceed_to_campaign_recommended')}",
+                f"**Recommend {n_planned}× campaign:** {ev.get('proceed_to_campaign_recommended')}",
                 "",
                 "| | |",
                 "|---|---|",
@@ -476,7 +488,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
         delta_f5 = h - campaign["strict_pass_rate_mean"]
         lines.extend(
             [
-                f"| Healthy baseline (v2 mean) | {h:.1%} |",
+                f"| Healthy baseline mean | {h:.1%} |",
                 f"| delta_F5 (healthy − F5) | {delta_f5:+.1%} |",
             ]
         )
@@ -649,7 +661,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
 
     lines.extend(
         [
-            "## Per-canary strict pass frequency (all 120 × 20 runs)",
+            f"## Per-canary strict pass frequency (all 120 × {n_planned} runs)",
             "",
             "| ID | Subtype | Pass count | Fail count | Pass rate |",
             "|---|---|---:|---:|---:|",
@@ -663,7 +675,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
     lines.extend(
         [
             "",
-            "## Canary stability across 20 runs",
+            f"## Canary stability across {n_planned} runs",
             "",
             "Canaries that changed strict pass/fail between runs (flaky):",
             "",
@@ -671,10 +683,10 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
     )
     flaky = campaign.get("flaky_canaries") or []
     if flaky:
-        lines.append("| ID | strict pass count / 20 |")
+        lines.append(f"| ID | strict pass count / {n_planned} |")
         lines.append("|---|---:|")
         for cid, cnt in flaky:
-            lines.append(f"| {cid} | {cnt}/20 |")
+            lines.append(f"| {cid} | {cnt}/{n_planned} |")
     else:
         lines.append("_None — all canaries had identical strict outcomes across completed runs._")
     lines.append("")
@@ -732,6 +744,9 @@ def finalize_campaign(
         existing_id = json.loads(manifest_path.read_text(encoding="utf-8")).get("campaign_id")
 
     healthy = load_healthy_baseline()
+    healthy_ref = os.getenv(
+        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31"
+    )
     h_mean = healthy.get("strict_pass_rate_mean") if healthy else None
     f_mean = statistics.mean(strict_rates)
     campaign: dict[str, Any] = {
@@ -745,7 +760,7 @@ def finalize_campaign(
         "served_model_name": served,
         "pod_id": pod_id,
         "scorer_contract": "calibrated-2026-08-10",
-        "healthy_baseline_ref": "results/healthy-stability-120x20-v2",
+        "healthy_baseline_ref": healthy_ref,
         "healthy_strict_pass_rate_mean": h_mean,
         "results_dir": str(out_dir.relative_to(REPO_ROOT)),
         "n_planned": repeats,
@@ -773,10 +788,13 @@ def finalize_campaign(
         campaign["preflight"] = json.loads(preflight_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_path = REPO_ROOT / "docs" / "F5_DECODING_CONFIG_DRIFT_STABILITY_120x20.md"
+    md_name = f"F5_DECODING_CONFIG_DRIFT_STABILITY_120x{repeats}.md"
+    md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f5_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(
-        f"# F5 stability 120×20\n\nCampaign `{campaign['campaign_id']}`\n\nSee `docs/F5_DECODING_CONFIG_DRIFT_STABILITY_120x20.md`\n",
+        f"# F5 stability 120×{repeats}\n\n"
+        f"Campaign `{campaign['campaign_id']}`\n\n"
+        f"See `docs/{md_name}`\n",
         encoding="utf-8",
     )
     return campaign
@@ -784,7 +802,7 @@ def finalize_campaign(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="F5 stability campaign — preflight + 120 core × N passes")
-    parser.add_argument("--repeats", type=int, default=20)
+    parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--limit", type=int, default=120)
     parser.add_argument("--split", default="core")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
@@ -859,7 +877,7 @@ def main() -> int:
         if not pf["evaluation"].get("proceed_to_campaign_recommended"):
             print(
                 f"F5 preflight: {pf['evaluation'].get('preflight_note')} — "
-                "20-repeat campaign not recommended from one pass alone.",
+                f"{args.repeats}-repeat campaign not recommended from one pass alone.",
                 file=sys.stderr,
             )
             if args.preflight_only:

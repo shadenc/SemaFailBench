@@ -139,10 +139,10 @@ def compare_tokenize_probes(healthy: dict[str, Any], candidate: dict[str, Any]) 
 
 def frozen_healthy_spec() -> dict[str, str]:
     return {
-        "model_repo": "Qwen/Qwen2.5-7B-Instruct",
-        "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
-        "tokenizer_repo": "Qwen/Qwen2.5-7B-Instruct",
-        "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "model_repo": "meta-llama/Llama-3.1-8B-Instruct",
+        "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+        "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
+        "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
         "dtype": "bfloat16",
         "quantization": "none",
         "lora": "none",

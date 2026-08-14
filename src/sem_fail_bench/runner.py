@@ -10,7 +10,7 @@ from typing import Any
 from sem_fail_bench.catalog import load_canaries, load_serving_config
 from sem_fail_bench.client import ServingClient
 from sem_fail_bench.hash_utils import sha256_json
-from sem_fail_bench.paths import OUTPUTS
+from sem_fail_bench.paths import OUTPUTS, REPO_ROOT
 from sem_fail_bench.provenance import snapshot_hashes
 from sem_fail_bench.scorers import score_canary
 
@@ -119,12 +119,25 @@ def run_suite(
                 "temperature": None if trust_server_decoding else temperature,
                 "seed": None if trust_server_decoding else seed,
                 "trust_server_decoding": trust_server_decoding,
-                "model_id": serving.get("model", {}).get("repo"),
+                # Record the model actually requested by the client. Fault runs
+                # intentionally override SFB_MODEL while serving.yaml remains
+                # the frozen healthy reference.
+                "model_id": client.model,
                 "canary_suite_version": catalog.get("suite_version"),
             }
         )
 
-    hashes = snapshot_hashes(extra_objects={"suite_version": catalog.get("suite_version"), "condition": condition})
+    fault_id = condition.split("-", 1)[0].upper()
+    fault_config = REPO_ROOT / "configs" / f"serving_{fault_id.lower()}.yaml"
+    extra_files = [fault_config] if fault_id.startswith("F") and fault_config.is_file() else []
+    hashes = snapshot_hashes(
+        extra_files=extra_files,
+        extra_objects={
+            "suite_version": catalog.get("suite_version"),
+            "condition": condition,
+            "requested_model": client.model,
+        },
+    )
     summary = {
         "run_id": run_id,
         "condition": condition,

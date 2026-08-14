@@ -51,19 +51,25 @@ def load_f1_config() -> dict:
 
 
 def load_healthy_baseline() -> dict | None:
-    path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "campaign_manifest.json"
+    path = (
+        REPO_ROOT
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / "campaign_manifest.json"
+    )
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _healthy_f1_delta() -> tuple[list[str], list[str], list[str]]:
-    """Compare healthy v2 run 1 vs F1 run 1 strict outcomes."""
-    healthy_manifest = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "run_01_manifest.json"
+def _healthy_f1_delta(campaign: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
+    """Compare the Llama healthy run 1 vs this F1 campaign run 1."""
+    healthy_manifest = (
+        REPO_ROOT / campaign["healthy_baseline_ref"] / "run_01_manifest.json"
+    )
     if not healthy_manifest.exists():
         return [], [], []
     h_fails = {f["canary_id"] for f in json.loads(healthy_manifest.read_text())["strict_failures"]}
-    f1_manifest = REPO_ROOT / "results" / "fault-f1-stability-120x20" / "run_01_manifest.json"
+    f1_manifest = REPO_ROOT / campaign["results_dir"] / "run_01_manifest.json"
     if not f1_manifest.exists():
         return sorted(h_fails), [], []
     f_fails = {f["canary_id"] for f in json.loads(f1_manifest.read_text())["strict_failures"]}
@@ -75,8 +81,10 @@ def _healthy_f1_delta() -> tuple[list[str], list[str], list[str]]:
 
 def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None) -> str:
     runs = campaign["runs"]
+    n_planned = int(campaign.get("n_planned") or len(runs))
+    run_range = f"2–{n_planned}"
     lines = [
-        "# F1 — Quantization regression · 120 core × 20 deterministic passes",
+        f"# F1 — Quantization regression · 120 core × {n_planned} deterministic passes",
         "",
         f"**Campaign id:** `{campaign['campaign_id']}`",
         f"**Fault:** F1 — {f1_cfg.get('fault_name', 'Quantization regression')}",
@@ -87,44 +95,68 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
         "",
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
-        "> Compare per-canary jsonl under `results/fault-f1-stability-120x20/` vs healthy v2 in `results/healthy-stability-120x20-v2/`.",
+        f"> Compare per-canary jsonl under `{campaign['results_dir']}/` vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
         "## Protocol",
         "",
-        "- Stop healthy bf16 vLLM; serve `Qwen/Qwen2.5-7B-Instruct-AWQ` with `--quantization awq`",
+        f"- Stop healthy bf16 vLLM; serve `{campaign['model']}` with `--quantization {campaign['quantization']}`",
         "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0",
         "- Run 1: 5 warmup requests discarded, then 120 measured",
-        "- Runs 2–20: 120 measured each (no warmup)",
+        f"- Runs {run_range}: 120 measured each (no warmup)" if n_planned > 1 else "- Single scored run after warmup",
         "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
         "",
-        "## Campaign summary",
-        "",
-        "| | |",
-        "|---|---|",
+    ]
+    preflight = campaign.get("preflight")
+    if preflight:
+        lines.extend(
+            [
+                "## Preflight gate",
+                "",
+                f"**Run id:** `{preflight.get('run_id', '?')}`",
+                f"**Verdict:** {preflight.get('verdict', '?')}",
+                "",
+                "| | |",
+                "|---|---|",
+                f"| Strict pass rate | {preflight.get('strict_pass_rate', 0):.1%} |",
+                f"| Healthy baseline | {preflight.get('healthy_strict_pass_rate', 0):.1%} |",
+                f"| delta_F1 (healthy − F1) | {preflight.get('delta_healthy_minus_fault', 0):+.1%} |",
+                f"| HTTP 200 | {preflight.get('http_200', 0)}/{preflight.get('n', 120)} |",
+                f"| Regressions | {', '.join(preflight.get('regressions') or []) or '—'} |",
+                f"| Recoveries | {', '.join(preflight.get('recoveries') or []) or '—'} |",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Campaign summary",
+            "",
+            "| | |",
+            "|---|---|",
         f"| Runs completed | {campaign['n_completed']} / {campaign['n_planned']} |",
         f"| All HTTP 200 | {campaign['all_http_200']} |",
         f"| Strict pass rate (mean) | **{campaign['strict_pass_rate_mean']:.1%}** |",
         f"| Strict pass rate (min–max) | {campaign['strict_pass_rate_min']:.1%} – {campaign['strict_pass_rate_max']:.1%} |",
         f"| Tolerant pass rate (mean) | {campaign['tolerant_pass_rate_mean']:.1%} |",
         f"| Stability gate (≥95% agreement) | {campaign['stability_gate']} |",
-    ]
+        ]
+    )
     if healthy:
         h = healthy.get("strict_pass_rate_mean", 0)
         delta = campaign["strict_pass_rate_mean"] - h
         lines.extend(
             [
-                f"| Healthy baseline (v2 mean) | {h:.1%} |",
+                f"| Healthy baseline mean | {h:.1%} |",
                 f"| Delta vs healthy | {delta:+.1%} |",
             ]
         )
-    regressions, recoveries, stable_fail = _healthy_f1_delta()
+    regressions, recoveries, stable_fail = _healthy_f1_delta(campaign)
     if regressions or recoveries:
         lines.extend(
             [
                 "",
                 "### F1 vs healthy (run 1 strict delta)",
                 "",
-                "Headline pass rate is unchanged; these canaries **swapped** pass/fail vs healthy v2:",
+                "Per-canary strict outcome changes versus Llama healthy run 1:",
                 "",
                 "| Direction | Canaries |",
                 "|---|---|",
@@ -231,7 +263,7 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
             lines.append("")
     lines.extend(
         [
-            "## Canary stability across 20 runs",
+            f"## Canary stability across {n_planned} runs",
             "",
             "Canaries that changed strict pass/fail between runs (flaky):",
             "",
@@ -239,10 +271,10 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
     )
     flaky = campaign.get("flaky_canaries") or []
     if flaky:
-        lines.append("| ID | strict pass count / 20 |")
+        lines.append(f"| ID | strict pass count / {n_planned} |")
         lines.append("|---|---:|")
         for cid, cnt in flaky:
-            lines.append(f"| {cid} | {cnt}/20 |")
+            lines.append(f"| {cid} | {cnt}/{n_planned} |")
     else:
         lines.append("_None — all canaries had identical strict outcomes across completed runs._")
     lines.append("")
@@ -301,6 +333,9 @@ def finalize_campaign(
         existing_id = json.loads(manifest_path.read_text(encoding="utf-8")).get("campaign_id")
 
     healthy = load_healthy_baseline()
+    healthy_ref = os.getenv(
+        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31"
+    )
     campaign: dict[str, Any] = {
         "campaign_id": existing_id or f"f1-stability-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "fault_id": "F1",
@@ -309,7 +344,7 @@ def finalize_campaign(
         "quantization": quant,
         "pod_id": pod_id,
         "scorer_contract": "calibrated-2026-08-10",
-        "healthy_baseline_ref": "results/healthy-stability-120x20-v2",
+        "healthy_baseline_ref": healthy_ref,
         "healthy_strict_pass_rate_mean": healthy.get("strict_pass_rate_mean") if healthy else None,
         "results_dir": str(out_dir.relative_to(REPO_ROOT)),
         "n_planned": repeats,
@@ -331,12 +366,18 @@ def finalize_campaign(
     }
     if healthy:
         campaign["delta_vs_healthy_strict"] = campaign["strict_pass_rate_mean"] - healthy["strict_pass_rate_mean"]
+    preflight_path = out_dir / "preflight_manifest.json"
+    if preflight_path.is_file():
+        campaign["preflight"] = json.loads(preflight_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_path = REPO_ROOT / "docs" / "F1_QUANTIZATION_STABILITY_120x20.md"
+    md_name = f"F1_QUANTIZATION_STABILITY_120x{repeats}.md"
+    md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f1_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(
-        f"# F1 stability 120×20\n\nCampaign `{campaign['campaign_id']}`\n\nSee `docs/F1_QUANTIZATION_STABILITY_120x20.md`\n",
+        f"# F1 stability 120×{repeats}\n\n"
+        f"Campaign `{campaign['campaign_id']}`\n\n"
+        f"See `docs/{md_name}`\n",
         encoding="utf-8",
     )
     return campaign
@@ -352,7 +393,7 @@ def main() -> int:
     parser.add_argument(
         "--finalize-only",
         action="store_true",
-        help="Rebuild campaign_manifest.json and docs/F1_QUANTIZATION_STABILITY_120x20.md from run manifests",
+        help="Rebuild campaign manifest and matching 120xN Markdown from run manifests",
     )
     args = parser.parse_args()
 
@@ -369,7 +410,7 @@ def main() -> int:
             args.out_dir, args.repeats, pod_id, f1_cfg, model, quant
         )
         print(f"Wrote {args.out_dir / 'campaign_manifest.json'}")
-        print(f"Wrote {REPO_ROOT / 'docs' / 'F1_QUANTIZATION_STABILITY_120x20.md'}")
+        print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}.md'}")
         return 0
 
     os.environ["SFB_MODEL"] = model
@@ -388,7 +429,7 @@ def main() -> int:
         print("API not reachable. Ensure tunnel + F1 vLLM are running.", file=sys.stderr)
         return 2
     model_ids = api0.get("model_ids") or []
-    if model_ids and not any("AWQ" in str(m) for m in model_ids):
+    if model_ids and model not in model_ids:
         print(f"WARNING: expected AWQ model, got {model_ids}", file=sys.stderr)
 
     campaign_id = f"f1-stability-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
@@ -529,7 +570,7 @@ def main() -> int:
 
     finalize_campaign(args.out_dir, args.repeats, pod_id, f1_cfg, model, quant, campaign_id=campaign_id)
     print(f"\nWrote {args.out_dir / 'campaign_manifest.json'}")
-    print(f"Wrote {REPO_ROOT / 'docs' / 'F1_QUANTIZATION_STABILITY_120x20.md'}")
+    print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}.md'}")
     return 0 if n == args.repeats else 1
 
 

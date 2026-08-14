@@ -1,5 +1,5 @@
 # F1 — Quantization regression serving envelope.
-# Same architecture as healthy (Qwen2.5-7B-Instruct); aggressively quantized weights (AWQ 4-bit).
+# Same Llama 3.1 8B Instruct checkpoint as healthy; aggressively quantized weights (AWQ INT4).
 # Healthy baseline: configs/serving.yaml (bf16 full precision).
 
 name: semafailbench-f1-quantization
@@ -12,14 +12,14 @@ max_new_tokens: 256
 gpu_memory_utilization: 0.90
 
 model:
-  repo: Qwen/Qwen2.5-7B-Instruct-AWQ
-  revision: null  # pin at download time → envs/f1_pins.json on pod
-  tokenizer_repo: Qwen/Qwen2.5-7B-Instruct-AWQ
-  quantization: awq
+  repo: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+  revision: db1f81ad4b8c7e39777509fac66c652eb0a52f91
+  tokenizer_repo: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+  quantization: awq_marlin
 
 healthy_reference:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
   dtype: bfloat16
 
 system_prompt: >

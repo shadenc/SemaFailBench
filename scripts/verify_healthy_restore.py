@@ -146,8 +146,11 @@ def main() -> int:
             checks["model_id_expected"],
             checks["revision_matches_frozen"],
             frozen["model_repo"] in vllm_proc or not vllm_proc,
-            "Qwen2-7B-Instruct" not in vllm_proc,
-            "--tokenizer Qwen/Qwen2" not in vllm_proc,
+            "--quantization" not in vllm_proc,
+            "--chat-template" not in vllm_proc,
+            "--override-generation-config" not in vllm_proc,
+            "--enable-lora" not in vllm_proc,
+            "--lora-modules" not in vllm_proc,
         ]
     )
     manifest["matches_frozen"] = matches

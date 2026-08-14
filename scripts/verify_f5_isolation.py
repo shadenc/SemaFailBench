@@ -136,8 +136,13 @@ def main() -> int:
 
     dtype_same = "bfloat16" in vllm_proc or "--dtype bfloat16" in vllm_proc
     lora_same = "--lora" not in vllm_proc and "--enable-lora" not in vllm_proc
+    quantization_same = "--quantization" not in vllm_proc
     wrong_gen_served = "--override-generation-config" in vllm_proc
     generation_differs = bool(pins_f5.get("wrong_generation_override"))
+    expected_override = json.loads(
+        (ROOT / "configs" / "f5_wrong_generation_config.json").read_text(encoding="utf-8")
+    )
+    override_matches_spec = pins_f5.get("wrong_generation_override") == expected_override
     chat_template_same = artifact_cmp["chat_template_identical"]
     no_custom_template = "--chat-template" not in vllm_proc
 
@@ -149,7 +154,9 @@ def main() -> int:
         and no_custom_template
         and wrong_gen_served
         and generation_differs
+        and override_matches_spec
         and dtype_same
+        and quantization_same
         and lora_same
     )
 
@@ -164,10 +171,12 @@ def main() -> int:
         "chat_template_same_as_healthy": chat_template_same,
         "token_ids_same_as_healthy": tokenize_cmp["token_ids_equal"],
         "generation_config_differs_from_healthy": generation_differs,
+        "generation_override_matches_spec": override_matches_spec,
         "wrong_generation_override": pins_f5.get("wrong_generation_override"),
         "healthy_generation_config_hash": pins_f5.get("healthy_generation_config_hash"),
         "wrong_generation_override_hash": pins_f5.get("wrong_generation_override_hash"),
         "dtype_same_as_healthy": dtype_same,
+        "quantization_same_as_healthy": quantization_same,
         "lora_same_as_healthy": lora_same,
         "override_generation_config_served": wrong_gen_served,
         "vllm_command": vllm_proc,
@@ -175,6 +184,7 @@ def main() -> int:
         "tokenize_comparison": tokenize_cmp,
         "api_check": api,
         "isolated": isolated,
+        "verdict": "ISOLATED" if isolated else "CONFOUNDED",
         "notes": (
             "F5 isolated: matched weights+tokenizer+template; only vLLM --override-generation-config differs."
             if isolated

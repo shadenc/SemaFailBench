@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Installs vLLM if missing, pins artifacts, starts healthy server.
 set +e
-MODEL="${SFB_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-REV="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
+MODEL="${SFB_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+REV="${SFB_HEALTHY_REVISION:-}"
 export MODEL REV
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
@@ -22,6 +22,9 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+# Prefer workspace token file if env empty
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 # RTX 5090 (sm_120) + CUDA toolkit 12.8: FlashInfer JIT dies with a misleading
@@ -48,9 +51,9 @@ pins = {
     "timestamp_utc": datetime.now(timezone.utc).isoformat(),
     "python": sys.version,
     "executable": sys.executable,
-    "model_repo": os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+    "model_repo": os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
     "model_revision_requested": os.environ.get("REV", ""),
-    "tokenizer_repo": os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+    "tokenizer_repo": os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
     "tokenizer_revision_requested": os.environ.get("REV", ""),
     "healthy_gpu": os.environ.get("GPU", "0"),
     "port": os.environ.get("PORT", "8000"),
@@ -82,6 +85,8 @@ for name in ("torch", "vllm", "transformers"):
 
 from huggingface_hub import snapshot_download, HfApi
 rev = pins["model_revision_requested"] or None
+if rev in ("", "TBD_PIN_AT_DOWNLOAD"):
+    rev = None
 path = snapshot_download(pins["model_repo"], revision=rev, local_files_only=False)
 pins["model_local_path"] = path
 pins["tokenizer_local_path"] = path

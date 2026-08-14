@@ -1,5 +1,5 @@
 # F6 — Wrong / stale LoRA adapter.
-# Matched Qwen2.5 weights + tokenizer + chat template + generation defaults;
+# Matched Llama 3.1 weights + tokenizer + chat template + generation defaults;
 # wrong domain-specific LoRA adapter mounted and routed in production.
 # Healthy baseline: configs/serving.yaml (no adapter)
 
@@ -15,35 +15,36 @@ gpu_memory_utilization: 0.90
 dtype: bfloat16
 
 model:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
 tokenizer:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
-# Wrong-task adapter: tool-calling LoRA left on a general instruct endpoint.
+# Wrong-task adapter: topic-control/safety LoRA left on a general instruct endpoint.
 wrong_lora_adapter:
-  module_name: stale-tool-lora
-  repo: arvindcr4/tool-call-lora-qwen2.5-7b
+  module_name: stale-topic-lora
+  repo: nvidia/llama-3.1-nemoguard-8b-topic-control
+  revision: 5ce438e7119061c809e9da819beb5b9287104230
   max_lora_rank: 16
   description: >
-    Realistic ops fault: a tool/agent LoRA remains mounted on the general Qwen2.5-7B-Instruct
+    Realistic ops fault: a topic-control safety LoRA remains mounted on the general Llama-3.1-8B-Instruct
     serving slot while the gateway routes traffic to the adapter module instead of bare base.
 
-served_model_name: Qwen/Qwen2.5-7B-Instruct
+served_model_name: meta-llama/Llama-3.1-8B-Instruct
 
 # Benchmark client targets the LoRA module alias (misconfigured production route).
 client_mode:
-  lora_module_name: stale-tool-lora
-  intended_base_model: Qwen/Qwen2.5-7B-Instruct
+  lora_module_name: stale-topic-lora
+  intended_base_model: meta-llama/Llama-3.1-8B-Instruct
 
 healthy_reference:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
   dtype: bfloat16
   lora: none
-  strict_pass_rate_mean: 0.925
+  strict_pass_rate_mean: 0.9666666666666667
   client_decoding:
     temperature: 0.0
     seed: 0

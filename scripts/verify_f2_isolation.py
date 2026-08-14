@@ -100,8 +100,8 @@ def main() -> int:
         return 2
 
     frozen = frozen_healthy_spec()
-    f2_actual = os.getenv("SFB_F2_ACTUAL_MODEL", "Qwen/Qwen2-7B-Instruct")
-    f2_rev = os.getenv("SFB_F2_REVISION", "f2826a00ceef68f0f2b946d945ecc0477ce4450c")
+    f2_actual = os.getenv("SFB_F2_ACTUAL_MODEL", "NousResearch/Meta-Llama-3-8B-Instruct")
+    f2_rev = os.getenv("SFB_F2_REVISION", "53346005fb0ef11d3b6a83b12c895cca40156b6c")
     expected = os.getenv("SFB_F2_EXPECTED_MODEL", frozen["model_repo"])
 
     key = Path(expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod")))
@@ -136,6 +136,7 @@ def main() -> int:
     gen_same = True  # F2 bootstrap uses same dtype/max_model_len flags as healthy
     dtype_same = "bfloat16" in vllm_proc or "--dtype bfloat16" in vllm_proc
     lora_same = "--lora" not in vllm_proc and "--enable-lora" not in vllm_proc
+    quantization_same = "--quantization" not in vllm_proc
 
     isolated = (
         artifact_cmp["tokenizer_files_identical"]
@@ -143,6 +144,7 @@ def main() -> int:
         and tokenize_cmp["token_ids_equal"]
         and checkpoint_changed
         and dtype_same
+        and quantization_same
         and lora_same
         and gen_same
     )
@@ -159,7 +161,7 @@ def main() -> int:
         "token_ids_same_as_healthy": tokenize_cmp["token_ids_equal"],
         "generation_same_as_healthy": gen_same,
         "dtype_same_as_healthy": dtype_same,
-        "quantization_same_as_healthy": "awq" not in vllm_proc.lower() and "gptq" not in vllm_proc.lower(),
+        "quantization_same_as_healthy": quantization_same,
         "lora_same_as_healthy": lora_same,
         "vllm_command": vllm_proc,
         "artifact_comparison": artifact_cmp,

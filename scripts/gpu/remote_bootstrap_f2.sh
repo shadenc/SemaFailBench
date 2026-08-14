@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F2 (wrong weights, frozen healthy tokenizer).
-set +e
-ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-Qwen/Qwen2-7B-Instruct}"
-REV="${SFB_F2_REVISION:-f2826a00ceef68f0f2b946d945ecc0477ce4450c}"
-EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
+set -euo pipefail
+ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-NousResearch/Meta-Llama-3-8B-Instruct}"
+REV="${SFB_F2_REVISION:-53346005fb0ef11d3b6a83b12c895cca40156b6c}"
+EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
 TOKENIZER_REPO="${SFB_F2_TOKENIZER:-$EXPECTED_MODEL}"
-TOKENIZER_REV="${SFB_F2_TOKENIZER_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
+TOKENIZER_REV="${SFB_F2_TOKENIZER_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-HEALTHY_REV="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
+HEALTHY_REV="${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}"
 export WORKDIR ACTUAL_MODEL REV EXPECTED_MODEL SERVED_NAME PORT GPU HEALTHY_REV TOKENIZER_REPO TOKENIZER_REV
 
 mkdir -p "$WORKDIR" /root/.ssh
@@ -26,24 +26,31 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if ! python3 -c "import vllm" 2>/dev/null; then
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
 for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
-    kill "$pid" 2>/dev/null; sleep 2; kill -9 "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$pid" 2>/dev/null || true
     rm -f "$pidfile"
   fi
 done
 pkill -f 'vllm.entrypoints.openai.api_server' 2>/dev/null || true
 sleep 3
+rm -f "$WORKDIR/pins_f2.json" "$WORKDIR/healthy_chat_template.jinja"
 
 python3 - <<PY
 import json, os, subprocess, sys
@@ -51,8 +58,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-actual = os.environ.get("ACTUAL_MODEL", "Qwen/Qwen2-7B-Instruct")
-expected = os.environ.get("EXPECTED_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+actual = os.environ.get("ACTUAL_MODEL", "NousResearch/Meta-Llama-3-8B-Instruct")
+expected = os.environ.get("EXPECTED_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 served = os.environ.get("SERVED_NAME", expected)
 rev = os.environ.get("REV", "")
 healthy_rev = os.environ.get("HEALTHY_REV", "")
@@ -96,7 +103,17 @@ from huggingface_hub import snapshot_download, HfApi
 from transformers import AutoTokenizer
 
 model_path = snapshot_download(actual, revision=rev, local_files_only=False)
-healthy_tok_path = snapshot_download(tokenizer_repo, revision=tokenizer_rev, local_files_only=False)
+healthy_tok_path = snapshot_download(
+    tokenizer_repo,
+    revision=tokenizer_rev,
+    allow_patterns=[
+        "tokenizer*",
+        "special_tokens_map.json",
+        "config.json",
+        "generation_config.json",
+    ],
+    local_files_only=False,
+)
 pins["model_local_path"] = model_path
 pins["healthy_tokenizer_local_path"] = healthy_tok_path
 pins["tokenizer_local_path"] = healthy_tok_path
@@ -216,7 +233,8 @@ try:
     pins["nvidia_smi_after_load"] = smi
 except Exception as exc:
     pins["nvidia_smi_after_error"] = str(exc)
-pins["vllm_command"] = open("/proc/$(cat(work / 'vllm_f2.pid'))/cmdline", "rb").read().replace(b"\\x00", b" ").decode("utf-8", "replace")
+pid = (work / "vllm_f2.pid").read_text(encoding="utf-8").strip()
+pins["vllm_command"] = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\\x00", b" ").decode("utf-8", "replace")
 (work / "pins_f2.json").write_text(json.dumps(pins, indent=2), encoding="utf-8")
 print("Updated pins_f2.json with post-load GPU snapshot + vLLM cmdline")
 PY

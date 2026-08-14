@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F6 (wrong LoRA adapter only).
-set +e
-MODEL="${SFB_F6_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-REV="${SFB_F6_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
-SERVED_NAME="${SFB_F6_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
-LORA_REPO="${SFB_F6_LORA_REPO:-arvindcr4/tool-call-lora-qwen2.5-7b}"
-LORA_MODULE="${SFB_F6_LORA_MODULE:-stale-tool-lora}"
+set -euo pipefail
+MODEL="${SFB_F6_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+REV="${SFB_F6_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
+SERVED_NAME="${SFB_F6_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
+LORA_REPO="${SFB_F6_LORA_REPO:-nvidia/llama-3.1-nemoguard-8b-topic-control}"
+LORA_REV="${SFB_F6_LORA_REVISION:-5ce438e7119061c809e9da819beb5b9287104230}"
+LORA_MODULE="${SFB_F6_LORA_MODULE:-stale-topic-lora}"
 MAX_LORA_RANK="${SFB_F6_MAX_LORA_RANK:-16}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-export MODEL REV SERVED_NAME LORA_REPO LORA_MODULE MAX_LORA_RANK PORT GPU WORKDIR
+export MODEL REV SERVED_NAME LORA_REPO LORA_REV LORA_MODULE MAX_LORA_RANK PORT GPU WORKDIR
 
 mkdir -p "$WORKDIR" /root/.ssh
 chmod 700 /root/.ssh
@@ -25,24 +26,31 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub peft
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if ! python3 -c "import vllm" 2>/dev/null; then
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
 for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid" "$WORKDIR/vllm_f5.pid" "$WORKDIR/vllm_f6.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
-    kill "$pid" 2>/dev/null; sleep 2; kill -9 "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$pid" 2>/dev/null || true
     rm -f "$pidfile"
   fi
 done
 pkill -f 'vllm.entrypoints.openai.api_server' 2>/dev/null || true
 sleep 3
+rm -f "$WORKDIR/pins_f6.json"
 
 python3 - <<PY
 import hashlib
@@ -54,11 +62,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct")
+model = os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 rev = os.environ.get("REV", "")
 served = os.environ.get("SERVED_NAME", model)
 lora_repo = os.environ.get("LORA_REPO", "")
-lora_module = os.environ.get("LORA_MODULE", "stale-tool-lora")
+lora_rev = os.environ.get("LORA_REV") or None
+lora_module = os.environ.get("LORA_MODULE", "stale-topic-lora")
 max_rank = int(os.environ.get("MAX_LORA_RANK", "16"))
 
 pins = {
@@ -73,6 +82,7 @@ pins = {
     "served_model_name": served,
     "lora_module_name": lora_module,
     "lora_adapter_repo": lora_repo,
+    "lora_adapter_revision_requested": lora_rev,
     "max_lora_rank": max_rank,
     "healthy_lora": "none",
     "python": sys.version,
@@ -102,7 +112,7 @@ model_path = snapshot_download(model, revision=rev or None, local_files_only=Fal
 pins["model_local_path"] = model_path
 pins["tokenizer_local_path"] = model_path
 
-lora_path = snapshot_download(lora_repo, local_files_only=False)
+lora_path = snapshot_download(lora_repo, revision=lora_rev, local_files_only=False)
 pins["lora_local_path"] = lora_path
 try:
     adapter_cfg = json.loads((Path(lora_path) / "adapter_config.json").read_text(encoding="utf-8"))
@@ -128,7 +138,7 @@ except Exception as exc:
     pins["model_revision_error"] = str(exc)
 
 try:
-    lora_info = HfApi().model_info(lora_repo)
+    lora_info = HfApi().model_info(lora_repo, revision=lora_rev)
     pins["lora_adapter_revision"] = lora_info.sha
 except Exception as exc:
     pins["lora_adapter_revision_error"] = str(exc)
@@ -138,7 +148,8 @@ print(json.dumps(pins, indent=2))
 PY
 
 PIN_MODEL_REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f6.json')).get('model_revision_pinned') or json.load(open('$WORKDIR/pins_f6.json')).get('model_revision_requested') or '')")
-LORA_MODULES_ARG="${LORA_MODULE}=${LORA_REPO}"
+LORA_LOCAL_PATH=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f6.json'))['lora_local_path'])")
+LORA_MODULES_ARG="${LORA_MODULE}=${LORA_LOCAL_PATH}"
 echo "f6_model_revision=${PIN_MODEL_REV:-unpinned}"
 echo "f6_lora_modules=${LORA_MODULES_ARG}"
 

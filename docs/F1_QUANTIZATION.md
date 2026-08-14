@@ -2,16 +2,16 @@
 
 Inject an **aggressively quantized** checkpoint (AWQ 4-bit) while keeping the same model architecture as healthy. The server should remain **HTTP-healthy** (200 responses, GPU loaded, no restart) but may show **semantic degradation** on some canaries vs the bf16 baseline.
 
-**Healthy baseline to compare against:** `results/healthy-stability-120x20-v2/` (92.5% strict, 20× locked)
+**Healthy baseline to compare against:** `results/healthy-stability-120x5-llama31/` (96.7% strict, 5× locked)
 
 **Fault spec:** `configs/faults.yaml` → F1  
 **F1 serving config:** `configs/serving_f1.yaml`
 
 | | Healthy | F1 fault |
 |---|---|---|
-| Model | `Qwen/Qwen2.5-7B-Instruct` | `Qwen/Qwen2.5-7B-Instruct-AWQ` |
+| Model | `meta-llama/Llama-3.1-8B-Instruct` | `hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4` |
 | Precision | bf16 | AWQ 4-bit |
-| vLLM flag | `--dtype bfloat16` | `--quantization awq` |
+| vLLM flag | `--dtype bfloat16` | `--quantization awq_marlin` |
 | Expected VRAM | ~30 GiB loaded | flat or lower |
 | Expected HTTP | 120/120 × 200 | 120/120 × 200 |
 
@@ -32,8 +32,9 @@ bash scripts/verify_f1_prep.sh
 Optional `.env` entries (defaults work):
 
 ```bash
-SFB_F1_MODEL=Qwen/Qwen2.5-7B-Instruct-AWQ
-SFB_F1_QUANTIZATION=awq
+SFB_F1_MODEL=hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+SFB_F1_REVISION=db1f81ad4b8c7e39777509fac66c652eb0a52f91
+SFB_F1_QUANTIZATION=awq_marlin
 ```
 
 ---
@@ -58,8 +59,9 @@ bash scripts/gpu/bootstrap_f1.sh
 
 This will:
 - Stop the healthy bf16 vLLM process
-- Download `Qwen/Qwen2.5-7B-Instruct-AWQ`
-- Start vLLM with `--quantization awq`
+- Download the pinned Llama 3.1 8B AWQ INT4 checkpoint
+- Reuse the pinned healthy Llama tokenizer to prevent F3/F4 confounding
+- Start vLLM with `--quantization awq_marlin` (RTX 5090-compatible AWQ kernel)
 - Write `pins_f1.json` on the pod (`/workspace/semafailbench/`)
 
 **Tunnel:** if already open, it keeps working (same port 8000).
@@ -67,7 +69,7 @@ This will:
 Update Mac client model for F1 runs:
 
 ```bash
-export SFB_MODEL=Qwen/Qwen2.5-7B-Instruct-AWQ
+export SFB_MODEL=hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
 ```
 
 Or rely on `run_fault_f1.py` / `smoke_f1.sh` which set this automatically.
@@ -88,20 +90,22 @@ bash scripts/smoke_f1.sh
 
 ---
 
-## Step 4 — Full F1 run (120 canaries)
+## Step 4 — Preflight, then 5×120 campaign
 
 ```bash
-python3 scripts/run_fault_f1.py --limit 120
+python3 scripts/run_fault_f1_stability.py \
+  --repeats 5 --limit 120 --split core \
+  --out-dir results/f1-llama31-stability-120x5
 ```
 
 Outputs:
-- `results/fault-f1-quantization-120/`
-- `docs/F1_QUANTIZATION_120.md` (vs healthy v2 delta)
+- `results/f1-llama31-stability-120x5/`
+- `docs/F1_QUANTIZATION_STABILITY_120x5.md`
 
 Compare:
-- Overall strict rate vs **92.5%**
+- Overall strict rate vs **96.7%**
 - Capability breakdown (Cap 1–4)
-- New failures vs the stable 9 healthy failures
+- New failures vs the stable 4 healthy failures
 - Canaries tagged `hypothesized_faults: F1` in catalog
 
 ---
@@ -114,7 +118,7 @@ bash scripts/gpu/tunnel.sh   # if needed
 sfb run --condition healthy --limit 3 --warmup
 ```
 
-Re-run should match v2 baseline (~92.5% strict, same 9 failures).
+Re-run should match the Llama baseline (96.7% strict, same 4 failures).
 
 Copy pins off pod after each phase:
 
@@ -133,7 +137,7 @@ Copy pins off pod after each phase:
 | Answers | All requests HTTP 200 with non-empty completions |
 | Infra healthy | No 5xx, no OOM, no restart during run |
 | GPU metrics | Util spikes during inference; stable memory |
-| Semantic effect | Pass rate **may drop** vs 92.5% — that is the fault signal |
+| Semantic effect | Pass rate **may drop** vs 96.7% — that is the fault signal |
 
 **Silent failure** = infra looks fine but canaries miss degradation. Compare F1 vs healthy per-canary, especially Cap 2 (structured output) and Cap 4 (safety) where F1 sensitivity is hypothesized.
 
@@ -144,7 +148,7 @@ Copy pins off pod after each phase:
 | Symptom | Fix |
 |---------|-----|
 | AWQ load fails | Check vLLM ≥ 0.6; `VLLM_USE_FLASHINFER_SAMPLER=0` |
-| Wrong model in API | `export SFB_MODEL=Qwen/Qwen2.5-7B-Instruct-AWQ` |
+| Wrong model in API | `export SFB_MODEL=hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4` |
 | Tunnel refused | Update `SFB_RUNPOD_TCP_*` in `.env`, restart tunnel |
 | OOM on AWQ | Unlikely; AWQ uses less VRAM — if OOM, lower `--gpu-memory-utilization` |
 

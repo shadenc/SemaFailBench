@@ -98,8 +98,10 @@ def main() -> int:
     frozen = frozen_healthy_spec()
     expected_model = os.getenv("SFB_F6_MODEL", frozen["model_repo"])
     expected_rev = os.getenv("SFB_F6_MODEL_REVISION", frozen["model_revision"])
-    expected_lora_module = os.getenv("SFB_F6_LORA_MODULE", "stale-tool-lora")
-    expected_lora_repo = os.getenv("SFB_F6_LORA_REPO", "arvindcr4/tool-call-lora-qwen2.5-7b")
+    expected_lora_module = os.getenv("SFB_F6_LORA_MODULE", "stale-topic-lora")
+    expected_lora_repo = os.getenv(
+        "SFB_F6_LORA_REPO", "nvidia/llama-3.1-nemoguard-8b-topic-control"
+    )
 
     key = Path(expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod")))
     host = os.getenv("SFB_RUNPOD_TCP_HOST", "")
@@ -138,9 +140,14 @@ def main() -> int:
     lora_repo_loaded = expected_lora_repo.split("/")[-1] in vllm_proc or expected_lora_repo in vllm_proc
     lora_adapter_differs_from_healthy = lora_enabled and lora_module_served
     generation_same = "--override-generation-config" not in vllm_proc
+    quantization_same = "--quantization" not in vllm_proc
     chat_template_same = artifact_cmp["chat_template_identical"]
     no_custom_template = "--chat-template" not in vllm_proc
     lora_in_models = expected_lora_module in (api.get("model_ids") or [])
+    adapter_cfg = pins_f6.get("lora_adapter_config") or {}
+    adapter_base_matches = adapter_cfg.get("base_model_name_or_path") == expected_model
+    adapter_rank = int(adapter_cfg.get("r") or 0)
+    adapter_rank_supported = 0 < adapter_rank <= int(pins_f6.get("max_lora_rank") or 0)
 
     isolated = (
         weights_unchanged
@@ -149,10 +156,13 @@ def main() -> int:
         and tokenize_cmp["token_ids_equal"]
         and no_custom_template
         and generation_same
+        and quantization_same
         and dtype_same
         and lora_adapter_differs_from_healthy
         and lora_repo_loaded
         and lora_in_models
+        and adapter_base_matches
+        and adapter_rank_supported
         and api.get("ok")
     )
 
@@ -169,6 +179,7 @@ def main() -> int:
         "chat_template_same_as_healthy": chat_template_same,
         "token_ids_same_as_healthy": tokenize_cmp["token_ids_equal"],
         "generation_config_same_as_healthy": generation_same,
+        "quantization_same_as_healthy": quantization_same,
         "dtype_same_as_healthy": dtype_same,
         "lora_enabled": lora_enabled,
         "lora_module_served": lora_module_served,
@@ -176,12 +187,16 @@ def main() -> int:
         "lora_module_in_api_models": lora_in_models,
         "lora_adapter_repo": pins_f6.get("lora_adapter_repo"),
         "lora_adapter_config_hash": pins_f6.get("lora_adapter_config_hash"),
+        "lora_adapter_base_matches": adapter_base_matches,
+        "lora_adapter_rank": adapter_rank,
+        "lora_adapter_rank_supported": adapter_rank_supported,
         "healthy_lora": "none",
         "vllm_command": vllm_proc,
         "artifact_comparison": artifact_cmp,
         "tokenize_comparison": tokenize_cmp,
         "api_check": api,
         "isolated": isolated,
+        "verdict": "ISOLATED" if isolated else "CONFOUNDED",
         "notes": (
             "F6 isolated: matched base weights+tokenizer+template+generation; only wrong LoRA adapter differs."
             if isolated

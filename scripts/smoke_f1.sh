@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 source .venv/bin/activate 2>/dev/null || true
 
-export SFB_MODEL="${SFB_F1_MODEL:-Qwen/Qwen2.5-7B-Instruct-AWQ}"
+export SFB_MODEL="${SFB_F1_MODEL:-hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4}"
 BASE="${SFB_BASE_URL:-http://127.0.0.1:8000/v1}"
 
 echo "=== F1 smoke test ==="

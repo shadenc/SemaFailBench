@@ -1,6 +1,6 @@
 # F4 — Chat-template mismatch serving envelope.
-# Correct Qwen2.5 weights + matched tokenizer; wrong family chat template at serve time.
-# Healthy baseline: configs/serving.yaml (Qwen/Qwen2.5-7B-Instruct @ a09a354…)
+# Correct Llama 3.1 weights + matched tokenizer; edited chat template at serve time.
+# Healthy baseline: configs/serving.yaml (Llama-3.1-8B-Instruct @ 0e9e39f…)
 
 name: semafailbench-f4-chat-template
 fault_id: F4
@@ -13,28 +13,28 @@ gpu_memory_utilization: 0.90
 dtype: bfloat16
 
 model:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
 tokenizer:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
 
-# Wrong template: official Qwen2.5 ChatML jinja with assistant generation header omitted.
+# Wrong template: Llama 3.1 header-format jinja with assistant generation header omitted.
 wrong_chat_template:
   kind: local
   path: configs/f4_wrong_chat_template_no_gen_prompt.jinja
   description: >
-    Stale/edited Qwen2.5 template missing the final add_generation_prompt block
-    (`<|im_start|>assistant`) — model continues user turn instead of answering.
+    Stale/edited Llama 3.1 template missing the final add_generation_prompt block
+    (`<|start_header_id|>assistant<|end_header_id|>`) — model continues after the user turn.
 
-served_model_name: Qwen/Qwen2.5-7B-Instruct
+served_model_name: meta-llama/Llama-3.1-8B-Instruct
 
 healthy_reference:
-  repo: Qwen/Qwen2.5-7B-Instruct
-  revision: a09a35458c702b33eeacc393d103063234e8bc28
+  repo: meta-llama/Llama-3.1-8B-Instruct
+  revision: 0e9e39f249a16976918f6564b8830bc894c89659
   dtype: bfloat16
-  strict_pass_rate_mean: 0.925
+  strict_pass_rate_mean: 0.9666666666666667
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.
@@ -60,7 +60,7 @@ expected_infra:
   http_error_rate: 0.0
   restart_count: 0
   notes:
-    - Wrong chat template only: Qwen2.5 ChatML minus assistant generation header.
+    - Wrong chat template only: Llama 3.1 header format minus assistant generation header.
     - Realistic scenario: edited --chat-template jinja accidentally deletes add_generation_prompt block.
     - Not F2 (checkpoint change) or F3 (tokenizer mismatch) — only prompt formatting changes.
     - Infra should remain flat (HTTP 200, GPU loaded).

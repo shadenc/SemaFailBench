@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F4 (wrong chat template only).
-set +e
-MODEL="${SFB_F4_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-REV="${SFB_F4_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
+set -euo pipefail
+MODEL="${SFB_F4_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+REV="${SFB_F4_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
 TOKENIZER_REPO="${SFB_F4_TOKENIZER:-$MODEL}"
 TOKENIZER_REV="${SFB_F4_TOKENIZER_REVISION:-$REV}"
-TEMPLATE_SOURCE="${SFB_F4_TEMPLATE_SOURCE:-microsoft/Phi-3-mini-4k-instruct}"
-SERVED_NAME="${SFB_F4_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
+TEMPLATE_SOURCE="${SFB_F4_TEMPLATE_SOURCE:-local:no_assistant_gen_prompt}"
+SERVED_NAME="${SFB_F4_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
@@ -26,24 +26,31 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if ! python3 -c "import vllm" 2>/dev/null; then
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
 for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
-    kill "$pid" 2>/dev/null; sleep 2; kill -9 "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$pid" 2>/dev/null || true
     rm -f "$pidfile"
   fi
 done
 pkill -f 'vllm.entrypoints.openai.api_server' 2>/dev/null || true
 sleep 3
+rm -f "$WORKDIR/pins_f4.json" "$WORKDIR/f4_wrong_chat_template.jinja"
 
 python3 - <<PY
 import json, os, subprocess, sys
@@ -51,7 +58,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct")
+model = os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 rev = os.environ.get("REV", "")
 tokenizer_repo = os.environ.get("TOKENIZER_REPO", model)
 tokenizer_rev = os.environ.get("TOKENIZER_REV", rev)
@@ -203,7 +210,7 @@ PY
 echo "Starting isolated F4 vLLM on GPU $GPU port $PORT"
 echo "  model=$MODEL revision=$REV"
 echo "  tokenizer=$TOKENIZER_REPO revision=$TOKENIZER_REV (matched healthy)"
-echo "  chat-template=$WRONG_TEMPLATE_FILE (system-stripped ChatML, NOT Qwen2.5 official)"
+echo "  chat-template=$WRONG_TEMPLATE_FILE (Llama template missing assistant generation header)"
 echo "  served_model_name=$SERVED_NAME"
 
 nohup env \
@@ -257,7 +264,8 @@ try:
     pins["nvidia_smi_after_load"] = smi
 except Exception as exc:
     pins["nvidia_smi_after_error"] = str(exc)
-pins["vllm_command"] = open("/proc/$(cat(work / 'vllm_f4.pid'))/cmdline", "rb").read().replace(b"\\x00", b" ").decode("utf-8", "replace")
+pid = (work / "vllm_f4.pid").read_text(encoding="utf-8").strip()
+pins["vllm_command"] = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\\x00", b" ").decode("utf-8", "replace")
 (work / "pins_f4.json").write_text(json.dumps(pins, indent=2), encoding="utf-8")
 print("Updated pins_f4.json with post-load GPU snapshot + vLLM cmdline")
 PY

@@ -236,10 +236,14 @@ def strict_failures(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def render_markdown(campaign: dict[str, Any]) -> str:
     runs = campaign["runs"]
+    n_planned = int(campaign.get("n_planned") or len(runs) or 20)
+    model = campaign.get("model") or os.getenv("SFB_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+    run_range = f"2–{n_planned}" if n_planned > 1 else "—"
     lines = [
-        "# Healthy stability — 120 core × 20 deterministic passes",
+        f"# Healthy stability — 120 core × {n_planned} deterministic passes",
         "",
         f"**Campaign id:** `{campaign['campaign_id']}`",
+        f"**Model:** `{model}`",
         f"**Pod:** `{campaign.get('pod_id', '?')}` · live vLLM inference",
         f"**Scorer contract:** `{campaign.get('scorer_contract', 'calibrated-2026-08-10')}`",
         "",
@@ -249,7 +253,7 @@ def render_markdown(campaign: dict[str, Any]) -> str:
         "",
         "- 120 core canaries (SFC-001 … SFC-120), catalog order, temp=0",
         "- Run 1: 5 warmup requests discarded, then 120 measured",
-        "- Runs 2–20: 120 measured each (no warmup)",
+        f"- Runs {run_range}: 120 measured each (no warmup)" if n_planned > 1 else "- Single scored run after warmup",
         "- API health check before each run; GPU sampled every 2s **during** inference; post-run GPU + vLLM `/metrics` scrape",
         "",
         "## Campaign summary",
@@ -359,7 +363,7 @@ def render_markdown(campaign: dict[str, Any]) -> str:
             lines.append("")
     lines.extend(
         [
-            "## Canary stability across 20 runs",
+            f"## Canary stability across {n_planned} runs",
             "",
             "Canaries that changed strict pass/fail between runs (flaky):",
             "",
@@ -439,6 +443,7 @@ def finalize_campaign(
     campaign: dict[str, Any] = {
         "campaign_id": existing_id or f"stability-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "pod_id": pod_id,
+        "model": os.getenv("SFB_MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
         "scorer_contract": "calibrated-2026-08-10",
         "results_dir": str(out_dir.relative_to(REPO_ROOT)),
         "n_planned": repeats,
@@ -459,10 +464,14 @@ def finalize_campaign(
         "stability_gate": "PASS" if n == repeats and max(strict_rates) - min(strict_rates) <= 0.05 else "REVIEW",
     }
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_path = REPO_ROOT / "docs" / "HEALTHY_STABILITY_120x20.md"
+    md_name = f"HEALTHY_STABILITY_120x{repeats}.md"
+    md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign), encoding="utf-8")
     (out_dir / "README.md").write_text(
-        f"# Healthy stability 120×20\n\nCampaign `{campaign['campaign_id']}`\n\nSee `docs/HEALTHY_STABILITY_120x20.md`\n",
+        f"# Healthy stability 120×{repeats}\n\n"
+        f"Model `{campaign['model']}`\n\n"
+        f"Campaign `{campaign['campaign_id']}`\n\n"
+        f"See `docs/{md_name}`\n",
         encoding="utf-8",
     )
     return campaign
@@ -526,7 +535,7 @@ def main() -> int:
             print(f"Updated {n} manifests", flush=True)
         campaign = finalize_campaign(args.out_dir, args.repeats, pod_id)
         print(f"Wrote {args.out_dir / 'campaign_manifest.json'}")
-        print(f"Wrote {REPO_ROOT / 'docs' / 'HEALTHY_STABILITY_120x20.md'}")
+        print(f"Wrote {REPO_ROOT / 'docs' / f'HEALTHY_STABILITY_120x{args.repeats}.md'}")
         return 0
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -696,7 +705,7 @@ def main() -> int:
 
     finalize_campaign(args.out_dir, args.repeats, pod_id, campaign_id=campaign["campaign_id"])
     print(f"\nWrote {args.out_dir / 'campaign_manifest.json'}")
-    print(f"Wrote {REPO_ROOT / 'docs' / 'HEALTHY_STABILITY_120x20.md'}")
+    print(f"Wrote {REPO_ROOT / 'docs' / f'HEALTHY_STABILITY_120x{args.repeats}.md'}")
     return 0 if n == args.repeats else 1
 
 

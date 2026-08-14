@@ -1,0 +1,60 @@
+{
+  "fault": "F5",
+  "deployment_kind": "decoding_config_drift_isolated",
+  "timestamp_utc": "2026-08-14T18:17:04.253005+00:00",
+  "expected_model": "meta-llama/Llama-3.1-8B-Instruct",
+  "expected_model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+  "weights_unchanged": true,
+  "tokenizer_files_same_as_healthy": true,
+  "chat_template_same_as_healthy": true,
+  "token_ids_same_as_healthy": true,
+  "generation_config_differs_from_healthy": true,
+  "generation_override_matches_spec": true,
+  "wrong_generation_override": {
+    "temperature": 1.4,
+    "top_p": 0.95,
+    "do_sample": true
+  },
+  "healthy_generation_config_hash": "815939444fbdac53842436e3ee587f1b8b815caeb121367b01520ff04bdf898d",
+  "wrong_generation_override_hash": "f630f953561513285f5a2544e9ab8cc309c2842bb5fb1f24389f84cfca42b8b2",
+  "dtype_same_as_healthy": true,
+  "quantization_same_as_healthy": true,
+  "lora_same_as_healthy": true,
+  "override_generation_config_served": true,
+  "vllm_command": "19903 python3 -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.1-8B-Instruct --revision 0e9e39f249a16976918f6564b8830bc894c89659 --served-model-name meta-llama/Llama-3.1-8B-Instruct --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --override-generation-config {\"temperature\": 1.4, \"top_p\": 0.95, \"do_sample\": true}",
+  "artifact_comparison": {
+    "tokenizer_files_identical": true,
+    "tokenizer_file_diffs": [],
+    "bpe_files_identical": true,
+    "bpe_file_diffs": [],
+    "config_files_identical": true,
+    "config_file_diffs": [],
+    "chat_template_identical": true,
+    "chat_template_hash_healthy": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+    "chat_template_hash_candidate": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+    "bundle_hash_healthy": "157d26358c5c72da61c14bc8effe70c47083c05e941216b9f30d4fd545ce0247",
+    "bundle_hash_candidate": "157d26358c5c72da61c14bc8effe70c47083c05e941216b9f30d4fd545ce0247",
+    "bundle_identical": true
+  },
+  "tokenize_comparison": {
+    "token_ids_equal": true,
+    "vocab_len_healthy": 128256,
+    "vocab_len_candidate": 128256,
+    "token_ids_hash_healthy": "75e78cd67f4447d15891e33ce3d88db030f3e8aeaef184af48167259c9cb14b0",
+    "token_ids_hash_candidate": "75e78cd67f4447d15891e33ce3d88db030f3e8aeaef184af48167259c9cb14b0"
+  },
+  "api_check": {
+    "ok": true,
+    "timestamp_utc": "2026-08-14T18:16:53.593418+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "meta-llama/Llama-3.1-8B-Instruct"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 582
+  },
+  "isolated": true,
+  "verdict": "ISOLATED",
+  "notes": "F5 isolated: matched weights+tokenizer+template; only vLLM --override-generation-config differs."
+}

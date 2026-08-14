@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F5 (wrong generation defaults only).
-set +e
-MODEL="${SFB_F5_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-REV="${SFB_F5_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}}"
-SERVED_NAME="${SFB_F5_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
+set -euo pipefail
+MODEL="${SFB_F5_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+REV="${SFB_F5_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
+SERVED_NAME="${SFB_F5_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
@@ -23,24 +23,31 @@ unset NVIDIA_VISIBLE_DEVICES
 export NVIDIA_VISIBLE_DEVICES="$GPU"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+if [[ -z "${HF_TOKEN:-}" && -f "$HF_HOME/token" ]]; then export HF_TOKEN="$(cat "$HF_HOME/token")"; fi
+export HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-${HF_TOKEN:-}}"
 export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if ! python3 -c "import vllm" 2>/dev/null; then
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
-for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid" "$WORKDIR/vllm_f5.pid"; do
+for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid" "$WORKDIR/vllm_f5.pid" "$WORKDIR/vllm_f6.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
-    kill "$pid" 2>/dev/null; sleep 2; kill -9 "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$pid" 2>/dev/null || true
     rm -f "$pidfile"
   fi
 done
 pkill -f 'vllm.entrypoints.openai.api_server' 2>/dev/null || true
 sleep 3
+rm -f "$WORKDIR/pins_f5.json"
 
 python3 - <<PY
 import hashlib
@@ -52,7 +59,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "Qwen/Qwen2.5-7B-Instruct")
+model = os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct")
 rev = os.environ.get("REV", "")
 served = os.environ.get("SERVED_NAME", model)
 override_file = Path(os.environ.get("F5_OVERRIDE_FILE", str(work / "f5_generation_override.json")))

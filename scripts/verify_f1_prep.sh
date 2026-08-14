@@ -36,7 +36,7 @@ import yaml
 from pathlib import Path
 cfg = yaml.safe_load(Path('configs/serving_f1.yaml').read_text())
 assert cfg['fault_id'] == 'F1'
-assert cfg['model']['quantization'] == 'awq'
+assert cfg['model']['quantization'] in {'awq', 'awq_marlin'}
 assert 'AWQ' in cfg['model']['repo']
 "
 
@@ -68,7 +68,7 @@ else
   echo "SKIP tunnel/API not up (HTTP $code) — start pod + tunnel before smoke"
 fi
 
-check test -f results/healthy-stability-120x20-v2/campaign_manifest.json
+check test -f results/healthy-stability-120x5-llama31/campaign_manifest.json
 
 echo "=== done ==="
 exit "$FAIL"
