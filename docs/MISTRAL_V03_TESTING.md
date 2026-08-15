@@ -44,11 +44,20 @@ restore healthy → bootstrap fault → isolation gate → preflight → 5×120 
 | Preflight | `python scripts/run_fault_fN_stability.py --preflight-only --out-dir results/mistral-v03/fN-retest` |
 | Campaign **5×** | `python scripts/run_fault_fN_stability.py --repeats 5 --out-dir results/mistral-v03/fN-retest` |
 
-**Campaign rules (same as Qwen):**
+**Campaign rules (Mistral uses 5×120; Qwen canonical is 20×120 — same fault shapes, different N):**
 - 5 global warmup requests discarded once before run 1
-- **5 scored runs** × **120 core canaries** (SFC-001…120), temp=0
+- **5 scored runs** × **120 core canaries** (SFC-001…120), catalog order, concurrency=1
 - GPU sampled every 2s during each run
 - Only proceed to 5× if preflight says `"proceed_to_campaign_recommended": true`
+
+**Decoding regime by fault (must match Qwen fault shape):**
+
+| Fault | Client decoding | Runs should be |
+|---|---|---|
+| Healthy, F1, F2, F4, **F6** | `temperature=0`, `seed=0` | **Bit-identical** strict pass rate across all 5 runs (`flaky_canaries: []`) |
+| **F5** | **`trust_server_decoding`** — omits temp/seed; server uses `configs/f5_wrong_generation_config.json` | **Stochastic** — pass rate may vary run-to-run (same as Qwen F5) |
+
+**Cross-model comparison:** compare **Δ vs each model’s own healthy baseline**, not raw pass rates across Qwen vs Mistral.
 
 ---
 
@@ -88,6 +97,22 @@ bash scripts/gpu/restore_healthy.sh
 ```
 
 Swap `bootstrap_f6.sh` → `bootstrap_f2.sh`, `f4`, `f5`, `f1` for other faults.
+
+### F6 determinism retest
+
+If the first F6 campaign has `flaky_canaries` (strict outcomes differ across runs), re-run **5× only** into a clean directory — same bootstrap, no protocol change:
+
+```bash
+OUT=results/mistral-v03/f6-retest-retry
+mkdir -p "$OUT"
+cp results/mistral-v03/f6-retest/healthy_restore_manifest.json "$OUT/"
+cp results/mistral-v03/f6-retest/f6_isolation_manifest.json "$OUT/"
+python3 scripts/run_fault_f6_stability.py --repeats 5 --skip-preflight --out-dir "$OUT"
+```
+
+**Pass criterion (Qwen parity):** `flaky_canaries: []` and identical strict pass rate on all 5 runs.
+
+**Retest note (2026-08-15):** A full 5× rerun in `f6-retest-retry` still showed **5 flaky canaries** (1.7 pp spread, gate PASS). Qwen F6 achieved 0 flaky on the same protocol — Mistral + CyberOps LoRA on vLLM 0.27 may not be fully bit-stable. Use **mean strict rate and Δ vs healthy** for cross-model comparison; treat small run spread as backend noise unless a future vLLM/pod fix clears `flaky_canaries`.
 
 ---
 

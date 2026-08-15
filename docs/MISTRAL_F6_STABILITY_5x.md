@@ -9,9 +9,13 @@
 **Served API model ids:** `mistralai/Mistral-7B-Instruct-v0.3`, `stale-cyber-lora`
 **Scorer contract:** `calibrated-2026-08-10`
 
-**Raw scores:** `results/mistral-v03/f6-retest`
+**Raw scores:** `results/mistral-v03/f6-retest` (primary) · retest: `results/mistral-v03/f6-retest-retry`
 
 > Compare per-canary jsonl vs healthy in `results/mistral-v03/healthy-stability-5x/` (Mistral healthy mean **79.2%** strict).
+
+## Determinism retest (2026-08-15)
+
+Fair-comparison rerun (`f6-retest-retry`, same protocol, 5×120): **46.0%** mean, **1.7 pp** spread, **5 flaky canaries** (SFC-012, 014, 038, 051, 053). Still not Qwen-parity (`flaky_canaries: []`). Primary campaign below remains the cited result; use **Δ vs healthy** for cross-model comparison.
 
 ## Campaign status
 
