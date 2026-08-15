@@ -1,0 +1,51 @@
+# F2 — Wrong checkpoint / weights only (Mistral v0.2 weights, frozen v0.3 tokenizer)
+
+name: semafailbench-f2-checkpoint-version-mistral-v03
+fault_id: F2
+fault_name: Model / checkpoint version regression
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+expected_model:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+actual_model:
+  repo: mistralai/Mistral-7B-Instruct-v0.2
+  revision: null
+
+tokenizer:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+served_model_name: mistralai/Mistral-7B-Instruct-v0.3
+
+healthy_reference:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  dtype: bfloat16
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1
+
+expected_infra:
+  notes:
+    - Same fault as Qwen F2: load older sibling weights (v0.2) with frozen healthy v0.3 tokenizer + template.
+    - Not a git commit pin inside v0.3 — different weight artifact.

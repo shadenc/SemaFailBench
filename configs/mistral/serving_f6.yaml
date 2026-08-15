@@ -1,0 +1,56 @@
+# F6 — Wrong / stale LoRA adapter (Mistral v0.3 base + wrong-task LoRA)
+
+name: semafailbench-f6-lora-adapter-mistral-v03
+fault_id: F6
+fault_name: Wrong / stale LoRA adapter
+deployment_kind: lora_adapter_mismatch_isolated
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+model:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+tokenizer:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+wrong_lora_adapter:
+  module_name: stale-cyber-lora
+  repo: dpevzner/CyberOps_Mistral_7B_LoRA
+  max_lora_rank: 16
+  description: >
+    Cybersecurity ops LoRA left mounted on the general Mistral v0.3 instruct endpoint;
+    client routes to the stale adapter module (same fault shape as Qwen tool-call LoRA).
+
+served_model_name: mistralai/Mistral-7B-Instruct-v0.3
+
+client_mode:
+  lora_module_name: stale-cyber-lora
+  intended_base_model: mistralai/Mistral-7B-Instruct-v0.3
+
+healthy_reference:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  dtype: bfloat16
+  lora: none
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1

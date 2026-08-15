@@ -1,0 +1,54 @@
+# F5 — Decoding config drift (same override JSON as Qwen; Mistral v0.3 weights unchanged)
+
+name: semafailbench-f5-decoding-config-mistral-v03
+fault_id: F5
+fault_name: Decoding / generation configuration drift
+deployment_kind: decoding_config_drift_isolated
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+model:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+tokenizer:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+wrong_generation_defaults:
+  kind: local
+  path: configs/f5_wrong_generation_config.json
+  description: temperature 1.4, top_p 0.95, do_sample true (same as Qwen F5)
+
+client_mode:
+  trust_server_decoding: true
+
+served_model_name: mistralai/Mistral-7B-Instruct-v0.3
+
+healthy_reference:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  dtype: bfloat16
+  client_decoding:
+    temperature: 0.0
+    seed: 0
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1

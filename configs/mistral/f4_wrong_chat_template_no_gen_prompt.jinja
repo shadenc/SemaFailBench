@@ -1,0 +1,19 @@
+{# F4 Mistral v0.3: official instruct template with generation opener omitted #}
+{%- if messages[0]['role'] == 'system' %}
+    {%- set user_messages = messages[1:] %}
+    {%- set system_message = messages[0]['content'] %}
+{%- else %}
+    {%- set user_messages = messages %}
+    {%- set system_message = false %}
+{%- endif %}
+{%- for message in user_messages %}
+    {%- if message['role'] == 'user' %}
+        {%- if loop.first and system_message %}
+            {{- bos_token + '[INST] ' + system_message + '\n\n' + message['content'] + ' [/INST]' }}
+        {%- else %}
+            {{- bos_token + '[INST] ' + message['content'] + ' [/INST]' }}
+        {%- endif %}
+    {%- elif message['role'] == 'assistant' %}
+        {{- ' ' + message['content'] + eos_token }}
+    {%- endif %}
+{%- endfor %}

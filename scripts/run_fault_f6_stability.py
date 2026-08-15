@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from sem_fail_bench.catalog import load_canaries  # noqa: E402
 from sem_fail_bench.client import ServingClient  # noqa: E402
-from sem_fail_bench.paths import REPO_ROOT  # noqa: E402
+from sem_fail_bench.paths import REPO_ROOT, fault_serving_path  # noqa: E402
 from sem_fail_bench.runner import run_suite, write_run  # noqa: E402
 
 load_dotenv(REPO_ROOT / ".env", override=True)
@@ -54,7 +54,7 @@ HEALTHY_RESTORE_MANIFEST = "healthy_restore_manifest.json"
 
 
 def load_f6_config() -> dict:
-    return yaml.safe_load((REPO_ROOT / "configs" / "serving_f6.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(fault_serving_path("f6").read_text(encoding="utf-8"))
 
 
 def f6_models(f6_cfg: dict) -> tuple[str, str, str, str, str]:
@@ -157,7 +157,7 @@ def core_canary_ids(*, split: str = "core", limit: int | None = None) -> list[st
 
 def run_global_warmup(client: ServingClient, *, n: int = 5) -> None:
     catalog = load_canaries()
-    serving = yaml.safe_load((REPO_ROOT / "configs" / "serving_f6.yaml").read_text(encoding="utf-8"))
+    serving = yaml.safe_load(fault_serving_path("f6").read_text(encoding="utf-8"))
     canaries = [c for c in catalog["canaries"] if c.get("split") == "core"]
     if not canaries:
         return

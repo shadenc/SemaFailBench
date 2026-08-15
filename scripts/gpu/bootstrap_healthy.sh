@@ -12,6 +12,7 @@ echo "Bootstrapping healthy vLLM via PTY SSH ($SFB_RUNPOD_SSH)"
 {
   printf 'export SFB_PUBKEY=%q\n' "$PUBKEY"
   printf 'export SFB_MODEL=%q\n' "${SFB_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+  printf 'export SFB_HEALTHY_REVISION=%q\n' "${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
   printf 'export SFB_PORT=%q\n' "${SFB_PORT:-8000}"
   printf 'export SFB_HEALTHY_GPU=%q\n' "${SFB_HEALTHY_GPU:-0}"
   printf 'export SFB_POD_WORKDIR=%q\n' "${SFB_POD_WORKDIR:-/workspace/semafailbench}"

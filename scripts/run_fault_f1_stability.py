@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sem_fail_bench.client import ServingClient  # noqa: E402
-from sem_fail_bench.paths import REPO_ROOT  # noqa: E402
+from sem_fail_bench.paths import REPO_ROOT, fault_serving_path  # noqa: E402
 from sem_fail_bench.runner import run_suite, write_run  # noqa: E402
 
 load_dotenv(REPO_ROOT / ".env", override=True)
@@ -47,7 +47,7 @@ load_existing_runs = _rhs.load_existing_runs
 
 
 def load_f1_config() -> dict:
-    return yaml.safe_load((REPO_ROOT / "configs" / "serving_f1.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(fault_serving_path("f1").read_text(encoding="utf-8"))
 
 
 def load_healthy_baseline() -> dict | None:

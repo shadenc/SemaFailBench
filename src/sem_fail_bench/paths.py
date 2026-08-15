@@ -20,8 +20,22 @@ def faults_path() -> Path:
     return CONFIGS / "faults.yaml"
 
 
+def configs_dir() -> Path:
+    profile = os.getenv("SFB_CONFIG_PROFILE", "").strip()
+    if profile:
+        return CONFIGS / profile
+    return CONFIGS
+
+
 def serving_path() -> Path:
-    return CONFIGS / "serving.yaml"
+    return configs_dir() / "serving.yaml"
+
+
+def fault_serving_path(fault_id: str) -> Path:
+    fault = fault_id.lower().strip()
+    if fault.startswith("f") and fault[1:].isdigit():
+        return configs_dir() / f"serving_{fault}.yaml"
+    raise ValueError(f"Unknown fault id: {fault_id!r}")
 
 
 def monitoring_path() -> Path:

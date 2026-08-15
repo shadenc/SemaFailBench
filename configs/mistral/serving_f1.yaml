@@ -1,0 +1,38 @@
+# F1 — Quantization regression (Mistral v0.3 AWQ vs bf16 healthy)
+
+name: semafailbench-f1-quantization-mistral-v03
+fault_id: F1
+fault_name: Quantization regression
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+
+model:
+  repo: solidrust/Mistral-7B-Instruct-v0.3-AWQ
+  revision: null
+  tokenizer_repo: solidrust/Mistral-7B-Instruct-v0.3-AWQ
+  quantization: awq
+
+healthy_reference:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  dtype: bfloat16
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+
+warmup_requests: 5
+concurrency: 1
+
+expected_infra:
+  http_error_rate: 0.0
+  notes:
+    - Same fault as Qwen F1: swap bf16 weights for official AWQ 4-bit checkpoint.

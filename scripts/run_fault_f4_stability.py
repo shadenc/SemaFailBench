@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sem_fail_bench.client import ServingClient  # noqa: E402
-from sem_fail_bench.paths import REPO_ROOT  # noqa: E402
+from sem_fail_bench.paths import REPO_ROOT, fault_serving_path  # noqa: E402
 from sem_fail_bench.runner import run_suite, write_run  # noqa: E402
 
 load_dotenv(REPO_ROOT / ".env", override=True)
@@ -52,7 +52,7 @@ HEALTHY_RESTORE_MANIFEST = "healthy_restore_manifest.json"
 
 
 def load_f4_config() -> dict:
-    return yaml.safe_load((REPO_ROOT / "configs" / "serving_f4.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(fault_serving_path("f4").read_text(encoding="utf-8"))
 
 
 def f4_models(f4_cfg: dict) -> tuple[str, str, str, str, str]:

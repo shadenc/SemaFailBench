@@ -1,0 +1,49 @@
+# F4 — Chat-template mismatch (Mistral v0.3; wrong template = missing [INST] generation opener)
+
+name: semafailbench-f4-chat-template-mistral-v03
+fault_id: F4
+fault_name: Chat-template mismatch
+suite_version: v3-frozen
+tensor_parallel_size: 1
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+dtype: bfloat16
+
+model:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+tokenizer:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+wrong_chat_template:
+  kind: local
+  path: configs/mistral/f4_wrong_chat_template_no_gen_prompt.jinja
+  description: >
+    Official Mistral v0.3 instruct jinja with the final add_generation_prompt
+    block removed (no trailing ` [INST] ` before generation).
+
+served_model_name: mistralai/Mistral-7B-Instruct-v0.3
+
+healthy_reference:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  dtype: bfloat16
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+
+warmup_requests: 5
+concurrency: 1
+
+preflight:
+  min_abs_strict_delta: 0.01
+  min_canary_swaps: 1

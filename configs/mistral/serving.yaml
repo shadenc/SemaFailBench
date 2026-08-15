@@ -1,0 +1,42 @@
+# Healthy baseline — Mistral-7B-Instruct-v0.3
+# Pin exact revision from pod pins.json after first bootstrap.
+
+name: semafailbench-healthy-mistral-v03
+suite_version: v3-frozen
+tensor_parallel_size: 1
+dtype: bfloat16
+max_model_len: 8192
+max_new_tokens: 256
+gpu_memory_utilization: 0.90
+
+model:
+  repo: mistralai/Mistral-7B-Instruct-v0.3
+  revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+  tokenizer_repo: mistralai/Mistral-7B-Instruct-v0.3
+  tokenizer_revision: c170c708c41dac9275d15a8fff4eca08d52bab71
+
+system_prompt: >
+  You are a careful assistant. Follow user instructions exactly.
+  When asked for JSON, return only valid JSON.
+  When a retrieved passage or context block is provided, use only that passage.
+
+generation:
+  deterministic:
+    temperature: 0.0
+  stochastic:
+    temperature: 0.7
+    top_p: 0.9
+    seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+warmup_requests: 5
+concurrency: 1
+healthy_repeats_deterministic: 5
+healthy_repeats_stochastic: 5
+
+adapter:
+  id: null
+  revision: null
+
+quantization:
+  method: null
+  config_hash: null
