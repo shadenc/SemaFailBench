@@ -22,7 +22,7 @@ Results directory: `results/mistral-v03/`
 | **F1** | Weight format | `solidrust/Mistral-7B-Instruct-v0.3-AWQ` + `--quantization awq` |
 | **F2** | Weights only | Load **`Mistral-7B-v0.3` base** weights; keep **instruct v0.3 tokenizer + template**; API id stays **v0.3** |
 | **F3** | *(skipped)* | — |
-| **F4** | Chat template only | `configs/mistral/f4_wrong_chat_template_no_gen_prompt.jinja` — **missing trailing ` [INST] ` opener** |
+| **F4** | Chat template only | Official v0.3 jinja with **`[/INST]` closers deleted by mistake** via `--chat-template` (deletion only; same fault class as Qwen F4) |
 | **F5** | Server generation defaults | Same `configs/f5_wrong_generation_config.json` (temp 1.4, top_p 0.95); client omits decoding params |
 | **F6** | LoRA adapter only | `dpevzner/CyberOps_Mistral_7B_LoRA` as **`stale-cyber-lora`**; client uses `model=stale-cyber-lora` |
 

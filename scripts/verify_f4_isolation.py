@@ -32,6 +32,13 @@ _spec = importlib.util.spec_from_file_location(
 _rhs = importlib.util.module_from_spec(_spec)
 assert _spec.loader is not None
 _spec.loader.exec_module(_rhs)
+
+if os.getenv("SFB_CONFIG_PROFILE") == "mistral":
+    # run_healthy_stability load_dotenv(override=True) restores legacy Qwen .env block.
+    os.environ["SFB_F4_MODEL"] = "mistralai/Mistral-7B-Instruct-v0.3"
+    os.environ["SFB_F4_MODEL_REVISION"] = "c170c708c41dac9275d15a8fff4eca08d52bab71"
+    os.environ["SFB_F4_TOKENIZER"] = "mistralai/Mistral-7B-Instruct-v0.3"
+    os.environ["SFB_F4_TOKENIZER_REVISION"] = "c170c708c41dac9275d15a8fff4eca08d52bab71"
 check_api = _rhs.check_api
 snapshot_gpu = _rhs.snapshot_gpu
 expand = _rhs.expand

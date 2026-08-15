@@ -94,8 +94,15 @@ for name in ("torch", "vllm", "transformers"):
 from huggingface_hub import snapshot_download, HfApi
 from transformers import AutoTokenizer
 
-model_path = snapshot_download(model, revision=rev or None, local_files_only=False)
-tokenizer_path = snapshot_download(tokenizer_repo, revision=tokenizer_rev or None, local_files_only=False)
+def _snap(repo: str, revision: str) -> str:
+    kwargs = {"revision": revision or None}
+    try:
+        return snapshot_download(repo, local_files_only=True, **kwargs)
+    except Exception:
+        return snapshot_download(repo, local_files_only=False, **kwargs)
+
+model_path = _snap(model, rev)
+tokenizer_path = _snap(tokenizer_repo, tokenizer_rev)
 pins["model_local_path"] = model_path
 pins["tokenizer_local_path"] = tokenizer_path
 
@@ -136,6 +143,12 @@ tmpl_healthy = healthy_cfg.get("chat_template") or ""
 if not tmpl_wrong:
     raise SystemExit("Could not load wrong chat template")
 
+def strip_jinja_comments(text: str) -> str:
+    lines = [ln for ln in text.splitlines() if not ln.strip().startswith("{#")]
+    return "\n".join(lines).rstrip() + "\n"
+
+tmpl_wrong_served = strip_jinja_comments(tmpl_wrong)
+
 healthy_tok = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
 sample_messages = [
     {"role": "system", "content": "You are a careful assistant."},
@@ -153,12 +166,12 @@ def ids_with_template(tok, messages, template):
     return list(ids)
 
 ids_healthy = ids_with_template(healthy_tok, sample_messages, tmpl_healthy)
-ids_wrong = ids_with_template(healthy_tok, sample_messages, tmpl_wrong)
+ids_wrong = ids_with_template(healthy_tok, sample_messages, tmpl_wrong_served)
 
 pins["isolation_probe"] = {
-    "chat_template_equal_healthy_vs_wrong_source": tmpl_healthy == tmpl_wrong,
+    "chat_template_equal_healthy_vs_wrong_source": tmpl_healthy == tmpl_wrong_served,
     "chat_template_len_healthy": len(tmpl_healthy),
-    "chat_template_len_wrong": len(tmpl_wrong),
+    "chat_template_len_wrong": len(tmpl_wrong_served),
     "token_ids_equal_healthy_vs_wrong_served": ids_healthy == ids_wrong,
     "token_ids_healthy": ids_healthy[:20],
     "token_ids_wrong_served": ids_wrong[:20],
@@ -179,6 +192,11 @@ WRONG_TEMPLATE_FILE="$WORKDIR/f4_wrong_chat_template.jinja"
 python3 - <<PY
 import json
 from pathlib import Path
+
+def strip_jinja_comments(text: str) -> str:
+    lines = [ln for ln in text.splitlines() if not ln.strip().startswith("{#")]
+    return "\n".join(lines).rstrip() + "\n"
+
 pins = json.loads((Path("$WORKDIR") / "pins_f4.json").read_text())
 tok_path = Path(pins["tokenizer_local_path"])
 wrong_path = Path(pins["wrong_template_source_local_path"])
@@ -194,17 +212,25 @@ else:
             wrong_tmpl = jp.read_text(encoding="utf-8")
 if not wrong_tmpl:
     raise SystemExit("Could not extract wrong chat template from template source")
+wrong_served = strip_jinja_comments(wrong_tmpl)
 Path("$HEALTHY_TEMPLATE_FILE").write_text(healthy_tmpl, encoding="utf-8")
-Path("$WRONG_TEMPLATE_FILE").write_text(wrong_tmpl, encoding="utf-8")
+Path("$WRONG_TEMPLATE_FILE").write_text(wrong_served, encoding="utf-8")
 print(f"Wrote healthy template ({len(healthy_tmpl)} chars) -> $HEALTHY_TEMPLATE_FILE")
-print(f"Wrote wrong template ({len(wrong_tmpl)} chars) -> $WRONG_TEMPLATE_FILE")
+print(f"Wrote wrong template ({len(wrong_served)} chars, comments stripped) -> $WRONG_TEMPLATE_FILE")
 PY
+
+# vLLM 0.27 MistralTokenizer wrapper ignores --chat-template; hf mode applies the override.
+TOKENIZER_MODE_ARGS=()
+case "$MODEL" in
+  mistralai/*|*Mistral*) TOKENIZER_MODE_ARGS=(--tokenizer-mode hf) ;;
+esac
 
 echo "Starting isolated F4 vLLM on GPU $GPU port $PORT"
 echo "  model=$MODEL revision=$REV"
-echo "  tokenizer=$TOKENIZER_REPO revision=$TOKENIZER_REV (matched healthy)"
-echo "  chat-template=$WRONG_TEMPLATE_FILE (system-stripped ChatML, NOT Qwen2.5 official)"
-echo "  served_model_name=$SERVED_NAME"
+echo "  healthy envelope + ONLY delta: --chat-template $WRONG_TEMPLATE_FILE"
+if ((${#TOKENIZER_MODE_ARGS[@]})); then
+  echo "  (Mistral: --tokenizer-mode hf so vLLM honors --chat-template; same tokenizer files as healthy)"
+fi
 
 nohup env \
   NVIDIA_VISIBLE_DEVICES="$GPU" \
@@ -214,10 +240,8 @@ nohup env \
   python3 -m vllm.entrypoints.openai.api_server \
   --model "$MODEL" \
   --revision "$PIN_MODEL_REV" \
-  --tokenizer "$TOKENIZER_REPO" \
-  --tokenizer-revision "$PIN_TOK_REV" \
+  "${TOKENIZER_MODE_ARGS[@]}" \
   --chat-template "$WRONG_TEMPLATE_FILE" \
-  --served-model-name "$SERVED_NAME" \
   --host 127.0.0.1 \
   --port "$PORT" \
   --tensor-parallel-size 1 \
@@ -245,10 +269,12 @@ for i in $(seq 1 90); do
 done
 
 python3 - <<PY
-import json, subprocess
+import json, subprocess, urllib.request
 from pathlib import Path
+
 work = Path("$WORKDIR")
 pins = json.loads((work / "pins_f4.json").read_text())
+pid = int((work / "vllm_f4.pid").read_text().strip())
 try:
     smi = subprocess.check_output(
         ["nvidia-smi", "--query-gpu=index,name,memory.used,memory.total,utilization.gpu", "--format=csv,noheader"],
@@ -257,9 +283,35 @@ try:
     pins["nvidia_smi_after_load"] = smi
 except Exception as exc:
     pins["nvidia_smi_after_error"] = str(exc)
-pins["vllm_command"] = open("/proc/$(cat(work / 'vllm_f4.pid'))/cmdline", "rb").read().replace(b"\\x00", b" ").decode("utf-8", "replace")
+pins["vllm_command"] = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
+
+# Verify vLLM actually serves the wrong template (not bundled healthy).
+body = json.dumps({
+    "model": pins["model_repo"],
+    "messages": [
+        {"role": "system", "content": "You are a careful assistant."},
+        {"role": "user", "content": "Reply with exactly three words."},
+    ],
+}).encode()
+req = urllib.request.Request(
+    f"http://127.0.0.1:{pins.get('port', '8000')}/v1/chat/completions/render",
+    data=body,
+    headers={"Content-Type": "application/json", "Authorization": "Bearer EMPTY"},
+)
+render = json.loads(urllib.request.urlopen(req, timeout=60).read())
+served_ids = render.get("token_ids", [])
+expected = pins.get("isolation_probe", {}).get("token_ids_wrong_served", [])
+pins["served_render_probe"] = {
+    "token_ids": served_ids,
+    "matches_isolation_probe_prefix": served_ids[: len(expected)] == expected if expected else None,
+    "matches_healthy_prefix": served_ids[: len(pins.get("isolation_probe", {}).get("token_ids_healthy", []))]
+    == pins.get("isolation_probe", {}).get("token_ids_healthy", []),
+}
+if pins["served_render_probe"].get("matches_healthy_prefix"):
+    raise SystemExit("F4 bootstrap: vLLM render still matches healthy token IDs — --chat-template not applied")
+
 (work / "pins_f4.json").write_text(json.dumps(pins, indent=2), encoding="utf-8")
-print("Updated pins_f4.json with post-load GPU snapshot + vLLM cmdline")
+print("Updated pins_f4.json; served template probe OK")
 PY
 
 echo "=== vllm_f4 pid ==="

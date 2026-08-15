@@ -22,13 +22,13 @@ export SFB_F2_SERVED_MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.3
 export SFB_F2_TOKENIZER=mistralai/Mistral-7B-Instruct-v0.3
 export SFB_F2_TOKENIZER_REVISION=c170c708c41dac9275d15a8fff4eca08d52bab71
 
-# F4 wrong Mistral template (local jinja, missing [INST] opener)
+# F4 wrong Mistral template (official v0.3 jinja with [/INST] closers deleted)
 export SFB_F4_MODEL=mistralai/Mistral-7B-Instruct-v0.3
 export SFB_F4_MODEL_REVISION=c170c708c41dac9275d15a8fff4eca08d52bab71
 export SFB_F4_TOKENIZER=mistralai/Mistral-7B-Instruct-v0.3
 export SFB_F4_TOKENIZER_REVISION=c170c708c41dac9275d15a8fff4eca08d52bab71
 export SFB_F4_TEMPLATE_FILE=configs/mistral/f4_wrong_chat_template_no_gen_prompt.jinja
-export SFB_F4_TEMPLATE_SOURCE=local:mistral_no_inst_gen_prompt
+export SFB_F4_TEMPLATE_SOURCE=local:no_assistant_gen_prompt
 export SFB_F4_SERVED_MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.3
 
 # F5 decoding drift (shared override JSON)

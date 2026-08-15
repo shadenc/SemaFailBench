@@ -1,4 +1,4 @@
-# F4 — Chat-template mismatch (Mistral v0.3; wrong template = missing [INST] generation opener)
+# F4 — Chat-template mismatch (Mistral v0.3; wrong template = missing [/INST] on last user turn)
 
 name: semafailbench-f4-chat-template-mistral-v03
 fault_id: F4
@@ -22,8 +22,11 @@ wrong_chat_template:
   kind: local
   path: configs/mistral/f4_wrong_chat_template_no_gen_prompt.jinja
   description: >
-    Official Mistral v0.3 instruct jinja with the final add_generation_prompt
-    block removed (no trailing ` [INST] ` before generation).
+    Realistic deployment mistake on official Mistral v0.3 jinja: accidental deletion of
+    [/INST] generation-close suffixes on user turns (same fault class as Qwen F4 removing
+    the add_generation_prompt block). Deletion only — no extra jinja added. Built by
+    scripts/gen_f4_no_gen_prompt_template.py --profile mistral. Isolation: matched weights
+    and tokenizer files; only vLLM --chat-template differs.
 
 served_model_name: mistralai/Mistral-7B-Instruct-v0.3
 

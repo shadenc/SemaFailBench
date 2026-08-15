@@ -3,6 +3,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
+if [[ "${SFB_CONFIG_PROFILE:-}" == "mistral" ]]; then
+  # shellcheck source=/dev/null
+  source "$ROOT/scripts/activate_mistral_profile.sh"
+fi
 export SFB_RUNPOD_SSH="${SFB_RUNPOD_SSH:-e0062jv6mdqq7w-644120e5@ssh.runpod.io}"
 export SFB_RUNPOD_KEY="${SFB_RUNPOD_KEY:-$HOME/.ssh/sfb_runpod}"
 export SFB_F4_MODEL="${SFB_F4_MODEL:-Qwen/Qwen2.5-7B-Instruct}"

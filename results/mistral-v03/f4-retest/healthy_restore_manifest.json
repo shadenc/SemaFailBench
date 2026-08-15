@@ -1,0 +1,49 @@
+{
+  "phase": "healthy_restore_verification",
+  "verified": true,
+  "matches_frozen": true,
+  "tokenizer_probe": {
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--mistralai--Mistral-7B-Instruct-v0.3/snapshots/c170c708c41dac9275d15a8fff4eca08d52bab71",
+    "file_hashes": {
+      "tokenizer.json": "e553af6fff7d7ad76e830608b218c5c0b0822998d5a1a96099a74cd3c1cb1a49",
+      "vocab.json": null,
+      "merges.txt": null,
+      "tokenizer_config.json": "0533dec9cfe319163801b6618d0f3ec9cfa126b6288e3df5deca6e32acb09cd2",
+      "special_tokens_map.json": "6fa06efa2785e450051989a6f8fb4416b10149ded485ddd3f127a40734f5cfd0"
+    },
+    "chat_template": {
+      "present": true,
+      "hash": "e16746b40344d6c5b5265988e0328a0bf7277be86f1c335156eae07e29c82826",
+      "length": 3959
+    },
+    "bundle_hash": "903fc0861df3e9c6b28ef8ef0138c8a35cf4439ea934bf474dbfbf4fef3c6719",
+    "tokenize_probe": {
+      "vocab_len": 32768,
+      "token_ids": [
+        1,
+        3,
+        1763,
+        1228,
+        1032,
+        12059,
+        14660,
+        29491,
+        781,
+        781,
+        24573,
+        1163,
+        5436,
+        2480,
+        3853,
+        29491,
+        4
+      ],
+      "token_ids_hash": "4992be6b2d6f6d7167df58afc10fb55fc937125dff71a84dc8944508e6cd82a6",
+      "decode_prefix": "<s>[INST] You are a careful assistant.\n\nReply with exactly three words.[/INST]"
+    }
+  },
+  "serving": {
+    "model_repo": "mistralai/Mistral-7B-Instruct-v0.3",
+    "model_revision": "c170c708c41dac9275d15a8fff4eca08d52bab71"
+  }
+}
