@@ -76,14 +76,20 @@ def f2_models(f2_cfg: dict) -> tuple[str, str, str, str]:
 
 
 def load_healthy_baseline() -> dict | None:
-    path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "campaign_manifest.json"
+    if os.getenv("SFB_CONFIG_PROFILE") == "mistral":
+        path = REPO_ROOT / "results" / "mistral-v03" / "healthy-stability-5x" / "campaign_manifest.json"
+    else:
+        path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "campaign_manifest.json"
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def healthy_run1_failures() -> set[str]:
-    path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "run_01_manifest.json"
+    if os.getenv("SFB_CONFIG_PROFILE") == "mistral":
+        path = REPO_ROOT / "results" / "mistral-v03" / "healthy-stability-5x" / "run_01_manifest.json"
+    else:
+        path = REPO_ROOT / "results" / "healthy-stability-120x20-v2" / "run_01_manifest.json"
     if not path.exists():
         return set()
     return {f["canary_id"] for f in json.loads(path.read_text())["strict_failures"]}
@@ -717,6 +723,10 @@ def finalize_campaign(
         existing_id = json.loads(manifest_path.read_text(encoding="utf-8")).get("campaign_id")
 
     healthy = load_healthy_baseline()
+    if os.getenv("SFB_CONFIG_PROFILE") == "mistral":
+        healthy_ref = "results/mistral-v03/healthy-stability-5x"
+    else:
+        healthy_ref = "results/healthy-stability-120x20-v2"
     h_mean = healthy.get("strict_pass_rate_mean") if healthy else None
     f_mean = statistics.mean(strict_rates)
     campaign: dict[str, Any] = {
@@ -730,7 +740,7 @@ def finalize_campaign(
         "served_model_name": served,
         "pod_id": pod_id,
         "scorer_contract": "calibrated-2026-08-10",
-        "healthy_baseline_ref": "results/healthy-stability-120x20-v2",
+        "healthy_baseline_ref": healthy_ref,
         "healthy_strict_pass_rate_mean": h_mean,
         "results_dir": str(out_dir.relative_to(REPO_ROOT)),
         "n_planned": repeats,

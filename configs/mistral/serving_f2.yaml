@@ -1,4 +1,4 @@
-# F2 — Wrong checkpoint / weights only (Mistral v0.2 weights, frozen v0.3 tokenizer)
+# F2 — Wrong checkpoint / weights only (Mistral-7B-v0.3 base weights, frozen instruct v0.3 tokenizer)
 
 name: semafailbench-f2-checkpoint-version-mistral-v03
 fault_id: F2
@@ -15,8 +15,8 @@ expected_model:
   revision: c170c708c41dac9275d15a8fff4eca08d52bab71
 
 actual_model:
-  repo: mistralai/Mistral-7B-Instruct-v0.2
-  revision: null
+  repo: mistralai/Mistral-7B-v0.3
+  revision: caa1feb0e54d415e2df31207e5f4e273e33509b1
 
 tokenizer:
   repo: mistralai/Mistral-7B-Instruct-v0.3
@@ -28,6 +28,7 @@ healthy_reference:
   repo: mistralai/Mistral-7B-Instruct-v0.3
   revision: c170c708c41dac9275d15a8fff4eca08d52bab71
   dtype: bfloat16
+  strict_pass_rate_mean: 0.792
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.
@@ -47,5 +48,6 @@ preflight:
 
 expected_infra:
   notes:
-    - Same fault as Qwen F2: load older sibling weights (v0.2) with frozen healthy v0.3 tokenizer + template.
-    - Not a git commit pin inside v0.3 — different weight artifact.
+    - Qwen-analog F2: swap weight artifact within the v0.3 family (base pretrain weights, not instruct).
+    - Same 32768 vocab as healthy instruct v0.3 — avoids v0.2/v0.3 tokenizer-vocab collapse.
+    - Frozen healthy instruct tokenizer + template; API id stays instruct v0.3.

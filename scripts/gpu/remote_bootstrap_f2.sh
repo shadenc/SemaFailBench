@@ -2,7 +2,10 @@
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F2 (wrong weights, frozen healthy tokenizer).
 set +e
 ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-Qwen/Qwen2-7B-Instruct}"
-REV="${SFB_F2_REVISION:-f2826a00ceef68f0f2b946d945ecc0477ce4450c}"
+REV="${SFB_F2_REVISION-}"
+if [[ -z "$REV" && "${SFB_CONFIG_PROFILE:-}" != "mistral" ]]; then
+  REV=f2826a00ceef68f0f2b946d945ecc0477ce4450c
+fi
 EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
 TOKENIZER_REPO="${SFB_F2_TOKENIZER:-$EXPECTED_MODEL}"
@@ -95,17 +98,28 @@ for name in ("torch", "vllm", "transformers"):
 from huggingface_hub import snapshot_download, HfApi
 from transformers import AutoTokenizer
 
-model_path = snapshot_download(actual, revision=rev, local_files_only=False)
-healthy_tok_path = snapshot_download(tokenizer_repo, revision=tokenizer_rev, local_files_only=False)
+tok_patterns = [
+    "tokenizer*",
+    "*.model",
+    "special_tokens_map.json",
+    "tokenizer_config.json",
+]
+model_path = snapshot_download(actual, revision=rev or None, local_files_only=False)
+healthy_tok_path = snapshot_download(
+    tokenizer_repo,
+    revision=tokenizer_rev or None,
+    allow_patterns=tok_patterns,
+    local_files_only=False,
+)
 pins["model_local_path"] = model_path
 pins["healthy_tokenizer_local_path"] = healthy_tok_path
 pins["tokenizer_local_path"] = healthy_tok_path
 
 try:
-    info = HfApi().model_info(actual, revision=rev)
+    info = HfApi().model_info(actual, revision=rev or None)
     pins["actual_model_revision_pinned"] = info.sha
     pins["actual_model_id"] = info.id
-    tok_info = HfApi().model_info(tokenizer_repo, revision=tokenizer_rev)
+    tok_info = HfApi().model_info(tokenizer_repo, revision=tokenizer_rev or None)
     pins["tokenizer_revision_pinned"] = tok_info.sha
 except Exception as exc:
     pins["model_revision_error"] = str(exc)
@@ -126,7 +140,13 @@ def ids_from(tok, messages):
     return list(ids)
 
 ids_healthy = ids_from(tok_healthy, sample_messages)
-ids_bundled = ids_from(tok_bundled, sample_messages)
+try:
+    ids_bundled = ids_from(tok_bundled, sample_messages)
+    bundled_tokenize_ok = True
+except Exception as exc:
+    ids_bundled = []
+    bundled_tokenize_ok = False
+    pins["bundled_tokenize_error"] = str(exc)
 cfg_healthy = json.loads((Path(healthy_tok_path) / "tokenizer_config.json").read_text(encoding="utf-8"))
 cfg_bundled = json.loads((Path(model_path) / "tokenizer_config.json").read_text(encoding="utf-8"))
 tmpl_healthy = cfg_healthy.get("chat_template") or ""
@@ -135,14 +155,20 @@ tmpl_bundled = cfg_bundled.get("chat_template") or ""
 pins["isolation_probe"] = {
     "tokenizer_vocab_len_healthy": len(tok_healthy),
     "tokenizer_vocab_len_bundled": len(tok_bundled),
-    "token_ids_equal_healthy_vs_bundled": ids_healthy == ids_bundled,
-    "chat_template_equal_healthy_vs_bundled": tmpl_healthy == tmpl_bundled,
+    "token_ids_equal_healthy_vs_bundled": ids_healthy == ids_bundled if bundled_tokenize_ok else None,
+    "chat_template_equal_healthy_vs_bundled": tmpl_healthy == tmpl_bundled if tmpl_bundled else None,
+    "bundled_has_chat_template": bool(tmpl_bundled),
     "using_frozen_healthy_tokenizer": True,
 }
 
 (work / "pins_f2.json").write_text(json.dumps(pins, indent=2), encoding="utf-8")
 print(json.dumps(pins, indent=2))
 PY
+
+if [[ ! -f "$WORKDIR/pins_f2.json" ]]; then
+  echo "F2 bootstrap failed: pins_f2.json not written"
+  exit 1
+fi
 
 PIN_MODEL_REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f2.json')).get('actual_model_revision_pinned') or json.load(open('$WORKDIR/pins_f2.json')).get('actual_model_revision') or '')")
 PIN_TOK_REV=$(python3 -c "import json; print(json.load(open('$WORKDIR/pins_f2.json')).get('tokenizer_revision_pinned') or json.load(open('$WORKDIR/pins_f2.json')).get('tokenizer_revision') or '')")
@@ -165,25 +191,31 @@ echo "  actual_model=$ACTUAL_MODEL revision=$REV"
 echo "  tokenizer=$TOKENIZER_REPO revision=$TOKENIZER_REV (frozen healthy)"
 echo "  served_model_name=$SERVED_NAME"
 
+VLLM_ARGS=(
+  --model "$ACTUAL_MODEL"
+  --tokenizer "$TOKENIZER_REPO"
+  --tokenizer-revision "$TOKENIZER_REV"
+  --chat-template "$CHAT_TEMPLATE_FILE"
+  --served-model-name "$SERVED_NAME"
+  --host 127.0.0.1
+  --port "$PORT"
+  --tensor-parallel-size 1
+  --dtype bfloat16
+  --max-model-len 8192
+  --gpu-memory-utilization 0.90
+  --enforce-eager
+)
+if [[ -n "$REV" ]]; then
+  VLLM_ARGS=(--revision "$REV" "${VLLM_ARGS[@]}")
+fi
+
 nohup env \
   NVIDIA_VISIBLE_DEVICES="$GPU" \
   CUDA_VISIBLE_DEVICES="$GPU" \
   VLLM_USE_FLASHINFER_SAMPLER=0 \
   PYTHONUNBUFFERED=1 \
   python3 -m vllm.entrypoints.openai.api_server \
-  --model "$ACTUAL_MODEL" \
-  --revision "$REV" \
-  --tokenizer "$TOKENIZER_REPO" \
-  --tokenizer-revision "$TOKENIZER_REV" \
-  --chat-template "$CHAT_TEMPLATE_FILE" \
-  --served-model-name "$SERVED_NAME" \
-  --host 127.0.0.1 \
-  --port "$PORT" \
-  --tensor-parallel-size 1 \
-  --dtype bfloat16 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.90 \
-  --enforce-eager \
+  "${VLLM_ARGS[@]}" \
   > "$WORKDIR/vllm_f2.log" 2>&1 &
 echo $! > "$WORKDIR/vllm_f2.pid"
 

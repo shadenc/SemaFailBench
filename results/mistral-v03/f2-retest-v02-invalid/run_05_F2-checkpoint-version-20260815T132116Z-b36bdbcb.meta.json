@@ -1,0 +1,17 @@
+{
+  "run_id": "F2-checkpoint-version-20260815T132116Z-b36bdbcb",
+  "condition": "F2-checkpoint-version",
+  "condition_regime": "deterministic",
+  "n": 120,
+  "strict_pass_rate": 0.09166666666666666,
+  "tolerant_pass_rate": 0.09166666666666666,
+  "config_hash": "9efaa84e87731e47e57a8ef62e1be20f6ff754c244fb9ad6259e8ebe03075760",
+  "artifact_hashes": {
+    "canaries_yaml": "1e8896c9449b17a75a0251713bb13bc17bc86bb2fd0b6666b0fdf34018efedd6",
+    "faults_yaml": "e6d31ed7267c5a15f82672c152f5d3d88e02ec78e4a3db114781ab4de162031e",
+    "serving_yaml": "879e00f78ca60dd188065c7ba97abf08d7b0143578ca7350030892d75288d55a",
+    "extra_objects": "34cbd65c7bb4df358755cce207678da031fe7ef85c0776c3bbb7314306337178",
+    "bundle": "9efaa84e87731e47e57a8ef62e1be20f6ff754c244fb9ad6259e8ebe03075760"
+  },
+  "catalog_hash": "4db3a64fa545e7aca2d21436f1e5af90e4e84da30da5f5cfeb404e810cfc51b3"
+}

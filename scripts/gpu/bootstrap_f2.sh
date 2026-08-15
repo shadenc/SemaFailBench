@@ -3,10 +3,16 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
+if [[ "${SFB_CONFIG_PROFILE:-}" == "mistral" ]]; then
+  # shellcheck source=/dev/null
+  source "$ROOT/scripts/activate_mistral_profile.sh"
+fi
 export SFB_RUNPOD_SSH="${SFB_RUNPOD_SSH:-g0uutfrnf83h9v-64410f64@ssh.runpod.io}"
 export SFB_RUNPOD_KEY="${SFB_RUNPOD_KEY:-$HOME/.ssh/sfb_runpod}"
 export SFB_F2_ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-Qwen/Qwen2-7B-Instruct}"
-export SFB_F2_REVISION="${SFB_F2_REVISION:-f2826a00ceef68f0f2b946d945ecc0477ce4450c}"
+if [[ -z "${SFB_F2_REVISION-}" && "${SFB_CONFIG_PROFILE:-}" != "mistral" ]]; then
+  export SFB_F2_REVISION=f2826a00ceef68f0f2b946d945ecc0477ce4450c
+fi
 export SFB_F2_EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 export SFB_F2_SERVED_MODEL_NAME="${SFB_F2_SERVED_MODEL_NAME:-Qwen/Qwen2.5-7B-Instruct}"
 export SFB_HEALTHY_REVISION="${SFB_HEALTHY_REVISION:-a09a35458c702b33eeacc393d103063234e8bc28}"
@@ -28,7 +34,8 @@ echo "  served_model_name=$SFB_F2_SERVED_MODEL_NAME"
 {
   printf 'export SFB_PUBKEY=%q\n' "$PUBKEY"
   printf 'export SFB_F2_ACTUAL_MODEL=%q\n' "$SFB_F2_ACTUAL_MODEL"
-  printf 'export SFB_F2_REVISION=%q\n' "$SFB_F2_REVISION"
+  printf 'export SFB_F2_REVISION=%q\n' "${SFB_F2_REVISION-}"
+  printf 'export SFB_CONFIG_PROFILE=%q\n' "${SFB_CONFIG_PROFILE:-}"
   printf 'export SFB_F2_EXPECTED_MODEL=%q\n' "$SFB_F2_EXPECTED_MODEL"
   printf 'export SFB_F2_SERVED_MODEL_NAME=%q\n' "$SFB_F2_SERVED_MODEL_NAME"
   printf 'export SFB_HEALTHY_REVISION=%q\n' "$SFB_HEALTHY_REVISION"
