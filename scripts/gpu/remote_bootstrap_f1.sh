@@ -3,11 +3,13 @@
 set +e
 MODEL="${SFB_F1_MODEL:-Qwen/Qwen2.5-7B-Instruct-AWQ}"
 QUANT="${SFB_F1_QUANTIZATION:-awq}"
+TOKENIZER="${SFB_F1_TOKENIZER:-}"
+TOKENIZER_REV="${SFB_F1_TOKENIZER_REVISION:-}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
 HEALTHY_MODEL="${SFB_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-export WORKDIR MODEL QUANT PORT GPU HEALTHY_MODEL
+export WORKDIR MODEL QUANT TOKENIZER TOKENIZER_REV PORT GPU HEALTHY_MODEL
 
 mkdir -p "$WORKDIR" /root/.ssh
 chmod 700 /root/.ssh
@@ -59,6 +61,8 @@ pins = {
     "python": sys.version,
     "model_repo": model,
     "quantization": quant,
+    "tokenizer_repo": os.environ.get("TOKENIZER") or None,
+    "tokenizer_revision_requested": os.environ.get("TOKENIZER_REV") or None,
     "healthy_reference_repo": healthy,
     "port": os.environ.get("PORT", "8000"),
     "healthy_gpu": os.environ.get("GPU", "0"),
@@ -105,6 +109,8 @@ nohup env \
   python3 -m vllm.entrypoints.openai.api_server \
   --model "$MODEL" \
   ${REV:+--revision "$REV"} \
+  ${TOKENIZER:+--tokenizer "$TOKENIZER"} \
+  ${TOKENIZER_REV:+--tokenizer-revision "$TOKENIZER_REV"} \
   --quantization "$QUANT" \
   --host 127.0.0.1 \
   --port "$PORT" \

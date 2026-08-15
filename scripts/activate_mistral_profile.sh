@@ -8,9 +8,11 @@ export SFB_CONFIG_PROFILE=mistral
 export SFB_MODEL=mistralai/Mistral-7B-Instruct-v0.3
 export SFB_HEALTHY_REVISION=c170c708c41dac9275d15a8fff4eca08d52bab71
 
-# F1 AWQ
+# F1 AWQ (weights quantized; keep healthy v0.3 tokenizer/template)
 export SFB_F1_MODEL=solidrust/Mistral-7B-Instruct-v0.3-AWQ
 export SFB_F1_QUANTIZATION=awq
+export SFB_F1_TOKENIZER=mistralai/Mistral-7B-Instruct-v0.3
+export SFB_F1_TOKENIZER_REVISION=c170c708c41dac9275d15a8fff4eca08d52bab71
 
 # F2 wrong weights (v0.2 artifact), frozen v0.3 tokenizer
 export SFB_F2_EXPECTED_MODEL=mistralai/Mistral-7B-Instruct-v0.3

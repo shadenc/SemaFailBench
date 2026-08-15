@@ -417,7 +417,7 @@ def main() -> int:
                             canary_pass_counts[json.loads(line)["canary_id"]] += 1
         print(f"Resuming from run {args.start_run} ({len(prior)} prior runs loaded)", flush=True)
 
-    client = ServingClient(timeout=180.0)
+    client = ServingClient(timeout=180.0, model=model)
     sampler = GpuSampler(ssh_key, tcp_host, tcp_port, interval_s=2.0) if tcp_host else None
     if not sampler:
         print("ERROR: GPU sampler unavailable without TCP host", file=sys.stderr)
