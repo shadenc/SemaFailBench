@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F6 (wrong LoRA adapter only).
 set -euo pipefail
-MODEL="${SFB_F6_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
-REV="${SFB_F6_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
-SERVED_NAME="${SFB_F6_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
-LORA_REPO="${SFB_F6_LORA_REPO:-nvidia/llama-3.1-nemoguard-8b-topic-control}"
-LORA_REV="${SFB_F6_LORA_REVISION:-5ce438e7119061c809e9da819beb5b9287104230}"
-LORA_MODULE="${SFB_F6_LORA_MODULE:-stale-topic-lora}"
+MODEL="${SFB_F6_MODEL:-google/gemma-2-9b-it}"
+REV="${SFB_F6_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-11c9b309abf73637e4b6f9a3fa1e92e615547819}}"
+SERVED_NAME="${SFB_F6_SERVED_MODEL_NAME:-google/gemma-2-9b-it}"
+LORA_REPO="${SFB_F6_LORA_REPO:-AdamLucek/gemma-2-9b-it-lora-yt-titles}"
+LORA_REV="${SFB_F6_LORA_REVISION:-820f6ab60102e9c0779599e28698fb117c8607a8}"
+LORA_MODULE="${SFB_F6_LORA_MODULE:-stale-yt-lora}"
 MAX_LORA_RANK="${SFB_F6_MAX_LORA_RANK:-16}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
@@ -62,12 +62,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+model = os.environ.get("MODEL", "google/gemma-2-9b-it")
 rev = os.environ.get("REV", "")
 served = os.environ.get("SERVED_NAME", model)
 lora_repo = os.environ.get("LORA_REPO", "")
 lora_rev = os.environ.get("LORA_REV") or None
-lora_module = os.environ.get("LORA_MODULE", "stale-topic-lora")
+lora_module = os.environ.get("LORA_MODULE", "stale-yt-lora")
 max_rank = int(os.environ.get("MAX_LORA_RANK", "16"))
 
 pins = {

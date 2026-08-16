@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F2 (wrong weights, frozen healthy tokenizer).
 set -euo pipefail
-ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-NousResearch/Meta-Llama-3-8B-Instruct}"
-REV="${SFB_F2_REVISION:-53346005fb0ef11d3b6a83b12c895cca40156b6c}"
-EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
-SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
+ACTUAL_MODEL="${SFB_F2_ACTUAL_MODEL:-google/gemma-2-9b}"
+REV="${SFB_F2_REVISION:-33c193028431c2fde6c6e51f29e6f17b60cbfac6}"
+EXPECTED_MODEL="${SFB_F2_EXPECTED_MODEL:-google/gemma-2-9b-it}"
+SERVED_NAME="${SFB_F2_SERVED_MODEL_NAME:-google/gemma-2-9b-it}"
 TOKENIZER_REPO="${SFB_F2_TOKENIZER:-$EXPECTED_MODEL}"
-TOKENIZER_REV="${SFB_F2_TOKENIZER_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
+TOKENIZER_REV="${SFB_F2_TOKENIZER_REVISION:-${SFB_HEALTHY_REVISION:-11c9b309abf73637e4b6f9a3fa1e92e615547819}}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-HEALTHY_REV="${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}"
+HEALTHY_REV="${SFB_HEALTHY_REVISION:-11c9b309abf73637e4b6f9a3fa1e92e615547819}"
 export WORKDIR ACTUAL_MODEL REV EXPECTED_MODEL SERVED_NAME PORT GPU HEALTHY_REV TOKENIZER_REPO TOKENIZER_REV
 
 mkdir -p "$WORKDIR" /root/.ssh
@@ -39,7 +39,7 @@ if ! python3 -c "import vllm" 2>/dev/null; then
   python3 -m pip install --break-system-packages vllm
 fi
 
-for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid"; do
+for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f3.pid" "$WORKDIR/vllm_f4.pid" "$WORKDIR/vllm_f5.pid" "$WORKDIR/vllm_f6.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
     kill "$pid" 2>/dev/null || true
@@ -58,8 +58,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-actual = os.environ.get("ACTUAL_MODEL", "NousResearch/Meta-Llama-3-8B-Instruct")
-expected = os.environ.get("EXPECTED_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+actual = os.environ.get("ACTUAL_MODEL", "google/gemma-2-9b")
+expected = os.environ.get("EXPECTED_MODEL", "google/gemma-2-9b-it")
 served = os.environ.get("SERVED_NAME", expected)
 rev = os.environ.get("REV", "")
 healthy_rev = os.environ.get("HEALTHY_REV", "")
@@ -130,10 +130,16 @@ except Exception as exc:
 # Isolation probe: healthy tokenizer vs actual-model bundled tokenizer
 tok_healthy = AutoTokenizer.from_pretrained(healthy_tok_path, trust_remote_code=True)
 tok_bundled = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-sample_messages = [
-    {"role": "system", "content": "You are a careful assistant."},
-    {"role": "user", "content": "Reply with exactly three words."},
-]
+path_l = f"{healthy_tok_path} {tokenizer_repo}".lower()
+if "gemma" in path_l:
+    sample_messages = [
+        {"role": "user", "content": "You are a careful assistant.\n\nReply with exactly three words."}
+    ]
+else:
+    sample_messages = [
+        {"role": "system", "content": "You are a careful assistant."},
+        {"role": "user", "content": "Reply with exactly three words."},
+    ]
 
 def ids_from(tok, messages):
     out = tok.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
@@ -142,8 +148,16 @@ def ids_from(tok, messages):
         ids = ids.tolist()
     return list(ids)
 
-ids_healthy = ids_from(tok_healthy, sample_messages)
-ids_bundled = ids_from(tok_bundled, sample_messages)
+try:
+    ids_healthy = ids_from(tok_healthy, sample_messages)
+except Exception as exc:
+    ids_healthy = None
+    pins["isolation_probe_healthy_error"] = str(exc)
+try:
+    ids_bundled = ids_from(tok_bundled, sample_messages)
+except Exception as exc:
+    ids_bundled = None
+    pins["isolation_probe_bundled_error"] = str(exc)
 cfg_healthy = json.loads((Path(healthy_tok_path) / "tokenizer_config.json").read_text(encoding="utf-8"))
 cfg_bundled = json.loads((Path(model_path) / "tokenizer_config.json").read_text(encoding="utf-8"))
 tmpl_healthy = cfg_healthy.get("chat_template") or ""

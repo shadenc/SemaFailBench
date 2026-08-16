@@ -1,0 +1,5 @@
+# F5 stability 120×5
+
+Campaign `f5-stability-20260816T115948Z`
+
+See `docs/F5_DECODING_CONFIG_DRIFT_STABILITY_120x5_GEMMA2.md`

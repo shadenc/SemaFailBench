@@ -355,6 +355,12 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
     if iso_path.is_file():
         iso = json.loads(iso_path.read_text(encoding="utf-8"))
 
+    upstream = f2_cfg.get("actual_model", {}).get("upstream_repo") or actual
+    provenance = f2_cfg.get("actual_model", {}).get("provenance_note")
+    upstream_line = f"**Upstream checkpoint:** `{upstream}`"
+    if provenance:
+        upstream_line += f" — {provenance}"
+
     lines = [
         f"# F2 — Model / checkpoint version regression (isolated) · 120 core × {n_planned} deterministic passes",
         "",
@@ -363,15 +369,14 @@ def render_markdown(campaign: dict[str, Any], f2_cfg: dict, healthy: dict | None
         f"**Pod:** `{campaign.get('pod_id', '?')}`",
         f"**Expected model (logical):** `{expected}`",
         f"**Actual model (loaded):** `{actual}` @ `{revision}`",
-        f"**Upstream checkpoint:** `{f2_cfg.get('actual_model', {}).get('upstream_repo', actual)}`"
-        " (pinned public mirror used because the upstream repo is separately gated)",
+        upstream_line,
         f"**Served API model id:** `{campaign.get('served_model_name', expected)}`",
         f"**Scorer contract:** `{campaign.get('scorer_contract', 'calibrated-2026-08-10')}`",
         "",
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
         "> Isolated F2: only checkpoint weights differ from healthy. Tokenizer/chat-template hashes verified identical.",
-        f"> Compare per-canary jsonl vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
+        f"> Compare per-canary jsonl vs healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
     ]
     if iso:
@@ -773,7 +778,7 @@ def finalize_campaign(
         campaign["preflight"] = json.loads(preflight_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_name = f"F2_CHECKPOINT_VERSION_STABILITY_120x{repeats}.md"
+    md_name = f"F2_CHECKPOINT_VERSION_STABILITY_120x{repeats}{os.getenv('SFB_DOC_SUFFIX', '')}.md"
     md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f2_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(

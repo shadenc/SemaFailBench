@@ -1,5 +1,5 @@
 # F1 — Quantization regression serving envelope.
-# Same Llama 3.1 8B Instruct checkpoint as healthy; aggressively quantized weights (AWQ INT4).
+# Same Gemma 2 9B IT checkpoint as healthy; aggressively quantized weights (AWQ INT4).
 # Healthy baseline: configs/serving.yaml (bf16 full precision).
 
 name: semafailbench-f1-quantization
@@ -12,15 +12,16 @@ max_new_tokens: 256
 gpu_memory_utilization: 0.90
 
 model:
-  repo: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
-  revision: db1f81ad4b8c7e39777509fac66c652eb0a52f91
-  tokenizer_repo: hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+  repo: hugging-quants/gemma-2-9b-it-AWQ-INT4
+  revision: 6e62725da8e92309167814dad7aacc0ed8cb2484
+  tokenizer_repo: google/gemma-2-9b-it
   quantization: awq_marlin
 
 healthy_reference:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
   dtype: bfloat16
+  strict_pass_rate_mean: 0.885
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.

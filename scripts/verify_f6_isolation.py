@@ -77,12 +77,12 @@ def main() -> int:
     parser.add_argument(
         "--healthy-manifest",
         type=Path,
-        default=ROOT / "results" / "f6-retest" / "healthy_restore_manifest.json",
+        default=ROOT / "results" / "f6-gemma2-stability-120x5" / "healthy_restore_manifest.json",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "results" / "f6-retest" / "f6_isolation_manifest.json",
+        default=ROOT / "results" / "f6-gemma2-stability-120x5" / "f6_isolation_manifest.json",
     )
     args = parser.parse_args()
 
@@ -98,9 +98,9 @@ def main() -> int:
     frozen = frozen_healthy_spec()
     expected_model = os.getenv("SFB_F6_MODEL", frozen["model_repo"])
     expected_rev = os.getenv("SFB_F6_MODEL_REVISION", frozen["model_revision"])
-    expected_lora_module = os.getenv("SFB_F6_LORA_MODULE", "stale-topic-lora")
+    expected_lora_module = os.getenv("SFB_F6_LORA_MODULE", "stale-yt-lora")
     expected_lora_repo = os.getenv(
-        "SFB_F6_LORA_REPO", "nvidia/llama-3.1-nemoguard-8b-topic-control"
+        "SFB_F6_LORA_REPO", "AdamLucek/gemma-2-9b-it-lora-yt-titles"
     )
 
     key = Path(expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod")))

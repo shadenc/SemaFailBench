@@ -81,12 +81,12 @@ def main() -> int:
     parser.add_argument(
         "--healthy-manifest",
         type=Path,
-        default=ROOT / "results" / "f2-retest" / "healthy_restore_manifest.json",
+        default=ROOT / "results" / "f2-gemma2-retest" / "healthy_restore_manifest.json",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "results" / "f2-retest" / "f2_isolation_manifest.json",
+        default=ROOT / "results" / "f2-gemma2-retest" / "f2_isolation_manifest.json",
     )
     args = parser.parse_args()
 
@@ -100,8 +100,8 @@ def main() -> int:
         return 2
 
     frozen = frozen_healthy_spec()
-    f2_actual = os.getenv("SFB_F2_ACTUAL_MODEL", "NousResearch/Meta-Llama-3-8B-Instruct")
-    f2_rev = os.getenv("SFB_F2_REVISION", "53346005fb0ef11d3b6a83b12c895cca40156b6c")
+    f2_actual = os.getenv("SFB_F2_ACTUAL_MODEL", "google/gemma-2-9b")
+    f2_rev = os.getenv("SFB_F2_REVISION", "33c193028431c2fde6c6e51f29e6f17b60cbfac6")
     expected = os.getenv("SFB_F2_EXPECTED_MODEL", frozen["model_repo"])
 
     key = Path(expand(os.getenv("SFB_RUNPOD_KEY", "~/.ssh/sfb_runpod")))
@@ -131,7 +131,15 @@ def main() -> int:
     )
 
     vllm_proc = ((snapshot_gpu(key, host, port) or {}).get("vllm_process")) or ""
-    checkpoint_changed = f2_actual in vllm_proc and frozen["model_repo"] not in vllm_proc.split("--model", 1)[-1][:80]
+    parts = vllm_proc.split()
+    model_arg = ""
+    if "--model" in parts:
+        idx = parts.index("--model")
+        if idx + 1 < len(parts):
+            model_arg = parts[idx + 1]
+    checkpoint_changed = bool(model_arg) and (
+        model_arg == f2_actual or f2_actual in model_arg
+    ) and model_arg != frozen["model_repo"]
 
     gen_same = True  # F2 bootstrap uses same dtype/max_model_len flags as healthy
     dtype_same = "bfloat16" in vllm_proc or "--dtype bfloat16" in vllm_proc

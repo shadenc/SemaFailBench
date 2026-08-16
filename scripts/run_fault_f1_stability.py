@@ -62,7 +62,7 @@ def load_healthy_baseline() -> dict | None:
 
 
 def _healthy_f1_delta(campaign: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
-    """Compare the Llama healthy run 1 vs this F1 campaign run 1."""
+    """Compare healthy run 1 vs this F1 campaign run 1."""
     healthy_manifest = (
         REPO_ROOT / campaign["healthy_baseline_ref"] / "run_01_manifest.json"
     )
@@ -95,7 +95,7 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
         "",
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
-        f"> Compare per-canary jsonl under `{campaign['results_dir']}/` vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
+        f"> Compare per-canary jsonl under `{campaign['results_dir']}/` vs healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
         "## Protocol",
         "",
@@ -156,7 +156,7 @@ def render_markdown(campaign: dict[str, Any], f1_cfg: dict, healthy: dict | None
                 "",
                 "### F1 vs healthy (run 1 strict delta)",
                 "",
-                "Per-canary strict outcome changes versus Llama healthy run 1:",
+                "Per-canary strict outcome changes versus healthy run 1:",
                 "",
                 "| Direction | Canaries |",
                 "|---|---|",
@@ -371,7 +371,7 @@ def finalize_campaign(
         campaign["preflight"] = json.loads(preflight_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_name = f"F1_QUANTIZATION_STABILITY_120x{repeats}.md"
+    md_name = f"F1_QUANTIZATION_STABILITY_120x{repeats}{os.getenv('SFB_DOC_SUFFIX', '')}.md"
     md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f1_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(
@@ -410,7 +410,8 @@ def main() -> int:
             args.out_dir, args.repeats, pod_id, f1_cfg, model, quant
         )
         print(f"Wrote {args.out_dir / 'campaign_manifest.json'}")
-        print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}.md'}")
+        suffix = os.getenv("SFB_DOC_SUFFIX", "")
+        print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}{suffix}.md'}")
         return 0
 
     os.environ["SFB_MODEL"] = model
@@ -570,7 +571,8 @@ def main() -> int:
 
     finalize_campaign(args.out_dir, args.repeats, pod_id, f1_cfg, model, quant, campaign_id=campaign_id)
     print(f"\nWrote {args.out_dir / 'campaign_manifest.json'}")
-    print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}.md'}")
+    suffix = os.getenv("SFB_DOC_SUFFIX", "")
+    print(f"Wrote {REPO_ROOT / 'docs' / f'F1_QUANTIZATION_STABILITY_120x{args.repeats}{suffix}.md'}")
     return 0 if n == args.repeats else 1
 
 

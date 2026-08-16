@@ -1,0 +1,157 @@
+{
+  "phase": "healthy_restore_verification",
+  "timestamp_utc": "2026-08-16T11:37:29.233839+00:00",
+  "frozen_spec": {
+    "model_repo": "google/gemma-2-9b-it",
+    "model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_repo": "google/gemma-2-9b-it",
+    "tokenizer_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": "8192",
+    "gpu_memory_utilization": "0.90"
+  },
+  "api": {
+    "ok": true,
+    "timestamp_utc": "2026-08-16T11:37:28.466317+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "google/gemma-2-9b-it"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 582
+  },
+  "matches_frozen": true,
+  "verified": true,
+  "infra": {
+    "gpu": {
+      "timestamp_utc": "2026-08-16T11:37:29.233915+00:00",
+      "ok": true,
+      "exit_code": 0,
+      "raw": "0, NVIDIA GeForce RTX 5090, 0, 0, 30158, 32607, 31, 13.35, 580.126.09\n18752 python3 -m vllm.entrypoints.openai.api_server --model google/gemma-2-9b-it --revision 11c9b309abf73637e4b6f9a3fa1e92e615547819 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager",
+      "gpu": {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "util_gpu_pct": 0.0,
+        "util_mem_pct": 0.0,
+        "memory_used_mib": 30158.0,
+        "memory_total_mib": 32607.0,
+        "temperature_c": 31.0,
+        "power_w": 13.35,
+        "driver_version": "580.126.09"
+      },
+      "vllm_process": "18752 python3 -m vllm.entrypoints.openai.api_server --model google/gemma-2-9b-it --revision 11c9b309abf73637e4b6f9a3fa1e92e615547819 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager"
+    },
+    "vllm_metrics": {
+      "timestamp_utc": "2026-08-16T11:37:31.015402+00:00",
+      "ok": true,
+      "status": 200,
+      "values": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:prompt_tokens_total": 0.0,
+        "vllm:generation_tokens_total": 0.0,
+        "vllm:time_to_first_token_seconds": 1786880225.2199059,
+        "vllm:e2e_request_latency_seconds": 1786880225.2200139
+      }
+    }
+  },
+  "pins": {
+    "timestamp_utc": "2026-08-16T11:36:20.494536+00:00",
+    "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+    "executable": "/usr/bin/python3",
+    "model_repo": "google/gemma-2-9b-it",
+    "model_revision_requested": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_repo": "google/gemma-2-9b-it",
+    "tokenizer_revision_requested": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "healthy_gpu": "0",
+    "port": "8000",
+    "cuda_version_env": null,
+    "nvidia_visible_devices_at_pin": "0",
+    "gpu_count_observed": 1,
+    "nvidia_smi": "0, NVIDIA GeForce RTX 5090, 32607 MiB, 580.126.09",
+    "torch_version": "2.13.0+cu130",
+    "torch_cuda": "13.0",
+    "cuda_available": true,
+    "device_count": 1,
+    "gpu_names": [
+      "NVIDIA GeForce RTX 5090"
+    ],
+    "vllm_version": "0.27.1",
+    "transformers_version": "5.15.0",
+    "model_local_path": "/workspace/.cache/huggingface/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_local_path": "/workspace/.cache/huggingface/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819"
+  },
+  "tokenizer_probe": {
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "file_hashes": {
+      "tokenizer.json": "3f289bc05132635a8bc7aca7aa21255efd5e18f3710f43e3cdb96bcd41be4922",
+      "tokenizer.model": "61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2",
+      "vocab.json": null,
+      "merges.txt": null,
+      "tokenizer_config.json": "cb32b7929c62608d46572e813112b3ad8a841fb98fdd6a4da8559e368a951c89",
+      "special_tokens_map.json": "baec30ea10906f16adb8c18af7a34023002c1746542612b8b41c9f09e1351351"
+    },
+    "chat_template": {
+      "present": true,
+      "hash": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+      "length": 591
+    },
+    "bundle_hash": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d",
+    "tokenize_probe": {
+      "vocab_len": 256000,
+      "token_ids": [
+        2,
+        106,
+        1645,
+        108,
+        2045,
+        708,
+        476,
+        15136,
+        20409,
+        235265,
+        109,
+        1946,
+        675,
+        7880,
+        2149,
+        3907,
+        235265,
+        107,
+        108,
+        106,
+        2516,
+        108
+      ],
+      "token_ids_hash": "fc46cc853f93aa1a03ebd6f5ae484636450870fbc23f0fdb1ee6e7b773b63984",
+      "decode_prefix": "<bos><start_of_turn>user\nYou are a careful assistant.\n\nReply with exactly three words.<end_of_turn>\n<start_of_turn>model\n"
+    }
+  },
+  "checks": {
+    "api_http_200": true,
+    "model_id_expected": true,
+    "model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "revision_matches_frozen": true
+  },
+  "serving": {
+    "model_repo": "google/gemma-2-9b-it",
+    "model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_repo": "google/gemma-2-9b-it",
+    "tokenizer_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "lora": "none",
+    "max_model_len": 8192,
+    "gpu_memory_utilization": 0.9,
+    "vllm_version": "0.27.1",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "vllm_command": "18752 python3 -m vllm.entrypoints.openai.api_server --model google/gemma-2-9b-it --revision 11c9b309abf73637e4b6f9a3fa1e92e615547819 --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager"
+  },
+  "chat_template_hash": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+  "tokenizer_bundle_hash": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d"
+}

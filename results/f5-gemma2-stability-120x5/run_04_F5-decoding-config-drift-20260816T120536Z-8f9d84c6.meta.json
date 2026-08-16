@@ -1,0 +1,18 @@
+{
+  "run_id": "F5-decoding-config-drift-20260816T120536Z-8f9d84c6",
+  "condition": "F5-decoding-config-drift",
+  "condition_regime": "server-defaults",
+  "n": 120,
+  "strict_pass_rate": 0.9,
+  "tolerant_pass_rate": 0.9083333333333333,
+  "config_hash": "a99cbeb14472c4a00dfef1c5dccdcada71193275673786747b8bf65ea129329f",
+  "artifact_hashes": {
+    "canaries_yaml": "1e8896c9449b17a75a0251713bb13bc17bc86bb2fd0b6666b0fdf34018efedd6",
+    "faults_yaml": "e6d31ed7267c5a15f82672c152f5d3d88e02ec78e4a3db114781ab4de162031e",
+    "serving_yaml": "666ab3ccac9c432c45b86c4d5b9ebcc1fc26df34916f7984c1c6f611b1e1735c",
+    "file:serving_f5.yaml": "1758ed3b03ee45101df072dfb3b74d0d25c9a3f5d8fafb3aba52d20a7b1ffe0f",
+    "extra_objects": "296450092bbf2978a0371f7db4cad55d710c680b77d64e1ec5667d2a0752d960",
+    "bundle": "a99cbeb14472c4a00dfef1c5dccdcada71193275673786747b8bf65ea129329f"
+  },
+  "catalog_hash": "4db3a64fa545e7aca2d21436f1e5af90e4e84da30da5f5cfeb404e810cfc51b3"
+}

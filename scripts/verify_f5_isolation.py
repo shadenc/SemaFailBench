@@ -81,12 +81,12 @@ def main() -> int:
     parser.add_argument(
         "--healthy-manifest",
         type=Path,
-        default=ROOT / "results" / "f5-retest" / "healthy_restore_manifest.json",
+        default=ROOT / "results" / "f5-gemma2-stability-120x5" / "healthy_restore_manifest.json",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "results" / "f5-retest" / "f5_isolation_manifest.json",
+        default=ROOT / "results" / "f5-gemma2-stability-120x5" / "f5_isolation_manifest.json",
     )
     args = parser.parse_args()
 

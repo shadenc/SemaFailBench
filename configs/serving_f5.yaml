@@ -1,6 +1,6 @@
-# F5 — Decoding / generation configuration drift.
-# Matched Llama 3.1 weights + tokenizer + chat template; wrong server generation defaults.
-# Healthy baseline: configs/serving.yaml (Llama-3.1-8B-Instruct @ 0e9e39f…)
+# F5 — Decoding / generation configuration drift serving envelope.
+# Matched Gemma 2 9B IT weights + tokenizer + chat template; wrong server generation defaults.
+# Healthy baseline: configs/serving.yaml (google/gemma-2-9b-it @ 11c9b309…)
 
 name: semafailbench-f5-decoding-config
 fault_id: F5
@@ -14,12 +14,12 @@ gpu_memory_utilization: 0.90
 dtype: bfloat16
 
 model:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
 tokenizer:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
 # Server-side override via vLLM --override-generation-config (merged with model generation_config.json).
 wrong_generation_defaults:
@@ -33,13 +33,13 @@ wrong_generation_defaults:
 client_mode:
   trust_server_decoding: true
 
-served_model_name: meta-llama/Llama-3.1-8B-Instruct
+served_model_name: google/gemma-2-9b-it
 
 healthy_reference:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
   dtype: bfloat16
-  strict_pass_rate_mean: 0.9666666666666667
+  strict_pass_rate_mean: 0.885
   client_decoding:
     temperature: 0.0
     seed: 0

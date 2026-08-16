@@ -10,10 +10,10 @@ max_new_tokens: 256
 gpu_memory_utilization: 0.90
 
 model:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
-  tokenizer_repo: meta-llama/Llama-3.1-8B-Instruct
-  tokenizer_revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
+  tokenizer_repo: google/gemma-2-9b-it
+  tokenizer_revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.

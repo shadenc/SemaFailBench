@@ -21,7 +21,7 @@ class ServingClient:
             "/"
         )
         self.api_key = api_key or os.getenv("SFB_API_KEY") or "EMPTY"
-        self.model = model or os.getenv("SFB_MODEL") or "meta-llama/Llama-3.1-8B-Instruct"
+        self.model = model or os.getenv("SFB_MODEL") or "google/gemma-2-9b-it"
         self.timeout = timeout
 
     def health(self) -> dict[str, Any]:
@@ -47,9 +47,29 @@ class ServingClient:
         trust_server_decoding: bool = False,
     ) -> dict[str, Any]:
         messages = []
-        if system_prompt:
+        user_content = prompt
+        # Gemma chat templates reject role=system (HTTP 400). Keep the same
+        # instruction text by folding system into the user turn. Check family
+        # env vars too: F6 routes the client to a LoRA module alias that does
+        # not contain "gemma" in the request model id.
+        family_hint = " ".join(
+            filter(
+                None,
+                [
+                    self.model,
+                    os.getenv("SFB_MODEL"),
+                    os.getenv("SFB_F6_MODEL"),
+                    os.getenv("SFB_F5_MODEL"),
+                    os.getenv("SFB_F4_MODEL"),
+                    os.getenv("SFB_F2_EXPECTED_MODEL"),
+                ],
+            )
+        ).lower()
+        if system_prompt and "gemma" in family_hint:
+            user_content = f"{system_prompt.strip()}\n\n{prompt}"
+        elif system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+        messages.append({"role": "user", "content": user_content})
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,

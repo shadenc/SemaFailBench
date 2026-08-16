@@ -28,6 +28,7 @@ except ModuleNotFoundError:
 
 TOKENIZER_FILES = (
     "tokenizer.json",
+    "tokenizer.model",
     "vocab.json",
     "merges.txt",
     "tokenizer_config.json",
@@ -84,10 +85,17 @@ def tokenize_probe(tokenizer_dir: str | Path) -> dict[str, Any]:
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(str(tokenizer_dir), trust_remote_code=True)
-    messages = [
-        {"role": "system", "content": "You are a careful assistant."},
-        {"role": "user", "content": "Reply with exactly three words."},
-    ]
+    system = "You are a careful assistant."
+    user = "Reply with exactly three words."
+    path_l = f"{tokenizer_dir} {getattr(tok, 'name_or_path', '')}".lower()
+    # Gemma chat templates raise on role=system. Keep the same instruction text.
+    if "gemma" in path_l:
+        messages = [{"role": "user", "content": f"{system}\n\n{user}"}]
+    else:
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
     out = tok.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
     ids = out["input_ids"] if hasattr(out, "__getitem__") else out
     if hasattr(ids, "tolist"):
@@ -139,10 +147,10 @@ def compare_tokenize_probes(healthy: dict[str, Any], candidate: dict[str, Any]) 
 
 def frozen_healthy_spec() -> dict[str, str]:
     return {
-        "model_repo": "meta-llama/Llama-3.1-8B-Instruct",
-        "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
-        "tokenizer_repo": "meta-llama/Llama-3.1-8B-Instruct",
-        "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+        "model_repo": "google/gemma-2-9b-it",
+        "model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+        "tokenizer_repo": "google/gemma-2-9b-it",
+        "tokenizer_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
         "dtype": "bfloat16",
         "quantization": "none",
         "lora": "none",

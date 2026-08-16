@@ -38,6 +38,11 @@ def expand(path: str) -> Path:
     return Path(os.path.expanduser(path))
 
 
+def doc_name(repeats: int) -> str:
+    """Doc filename, suffixed per model so campaigns never overwrite each other."""
+    return f"HEALTHY_STABILITY_120x{repeats}{os.getenv('SFB_DOC_SUFFIX', '')}.md"
+
+
 def check_api(base_url: str) -> dict[str, Any]:
     root = base_url.rstrip("/").removesuffix("/v1")
     out: dict[str, Any] = {"ok": False, "timestamp_utc": utc_now()}
@@ -371,10 +376,10 @@ def render_markdown(campaign: dict[str, Any]) -> str:
     )
     flaky = campaign.get("flaky_canaries") or []
     if flaky:
-        lines.append("| ID | strict pass count / 20 |")
+        lines.append(f"| ID | strict pass count / {n_planned} |")
         lines.append("|---|---:|")
         for cid, cnt in flaky:
-            lines.append(f"| {cid} | {cnt}/20 |")
+            lines.append(f"| {cid} | {cnt}/{n_planned} |")
     else:
         lines.append("_None — all canaries had identical strict outcomes across completed runs._")
     lines.append("")
@@ -464,7 +469,7 @@ def finalize_campaign(
         "stability_gate": "PASS" if n == repeats and max(strict_rates) - min(strict_rates) <= 0.05 else "REVIEW",
     }
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_name = f"HEALTHY_STABILITY_120x{repeats}.md"
+    md_name = doc_name(repeats)
     md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign), encoding="utf-8")
     (out_dir / "README.md").write_text(
@@ -535,7 +540,7 @@ def main() -> int:
             print(f"Updated {n} manifests", flush=True)
         campaign = finalize_campaign(args.out_dir, args.repeats, pod_id)
         print(f"Wrote {args.out_dir / 'campaign_manifest.json'}")
-        print(f"Wrote {REPO_ROOT / 'docs' / f'HEALTHY_STABILITY_120x{args.repeats}.md'}")
+        print(f"Wrote {REPO_ROOT / 'docs' / doc_name(args.repeats)}")
         return 0
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -705,7 +710,7 @@ def main() -> int:
 
     finalize_campaign(args.out_dir, args.repeats, pod_id, campaign_id=campaign["campaign_id"])
     print(f"\nWrote {args.out_dir / 'campaign_manifest.json'}")
-    print(f"Wrote {REPO_ROOT / 'docs' / f'HEALTHY_STABILITY_120x{args.repeats}.md'}")
+    print(f"Wrote {REPO_ROOT / 'docs' / doc_name(args.repeats)}")
     return 0 if n == args.repeats else 1
 
 

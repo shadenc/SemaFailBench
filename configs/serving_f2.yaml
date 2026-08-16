@@ -1,6 +1,6 @@
 # F2 — Model / checkpoint version regression serving envelope.
-# Wrong model-version artifact: Llama 3 served where Llama 3.1 is expected.
-# Healthy baseline: configs/serving.yaml (Llama-3.1-8B-Instruct @ 0e9e39f…)
+# Wrong checkpoint: Gemma 2 9B base served where Gemma 2 9B IT is expected.
+# Healthy baseline: configs/serving.yaml (google/gemma-2-9b-it @ 11c9b309…)
 
 name: semafailbench-f2-checkpoint-version
 fault_id: F2
@@ -14,29 +14,28 @@ dtype: bfloat16
 
 # Logical model identity the client and scorer expect (matches healthy).
 expected_model:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
-# Actual weights loaded on the pod (older family release).
+# Actual weights loaded on the pod (same architecture, non-IT checkpoint).
 actual_model:
-  repo: NousResearch/Meta-Llama-3-8B-Instruct
-  revision: 53346005fb0ef11d3b6a83b12c895cca40156b6c
-  upstream_repo: meta-llama/Meta-Llama-3-8B-Instruct
-  provenance_note: Public mirror of the upstream Meta Llama 3 Instruct checkpoint.
+  repo: google/gemma-2-9b
+  revision: 33c193028431c2fde6c6e51f29e6f17b60cbfac6
+  provenance_note: Official Google Gemma 2 9B pretrained (non-IT) checkpoint.
 
 # Frozen healthy tokenizer/chat-template — MUST NOT change for isolated F2.
 tokenizer:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
 # vLLM --served-model-name: API clients see the expected logical id.
-served_model_name: meta-llama/Llama-3.1-8B-Instruct
+served_model_name: google/gemma-2-9b-it
 
 healthy_reference:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
   dtype: bfloat16
-  strict_pass_rate_mean: 0.9666666666666667
+  strict_pass_rate_mean: 0.885
 
 system_prompt: >
   You are a careful assistant. Follow user instructions exactly.
@@ -64,6 +63,6 @@ expected_infra:
   http_error_rate: 0.0
   restart_count: 0
   notes:
-    - Wrong model-version artifact: Llama 3 weights with frozen Llama 3.1 tokenizer + chat template.
+    - Wrong checkpoint artifact: Gemma 2 9B base weights with frozen Gemma 2 9B IT tokenizer + chat template.
     - Not F3 (tokenizer mismatch) or F4 (chat-template mismatch) — only checkpoint changes.
     - Infra should remain flat (HTTP 200, GPU loaded).

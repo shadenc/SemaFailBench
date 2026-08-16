@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops healthy vLLM, starts F1 AWQ-quantized server.
 set +e
-MODEL="${SFB_F1_MODEL:-hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4}"
-REV="${SFB_F1_REVISION:-db1f81ad4b8c7e39777509fac66c652eb0a52f91}"
+MODEL="${SFB_F1_MODEL:-hugging-quants/gemma-2-9b-it-AWQ-INT4}"
+REV="${SFB_F1_REVISION:-6e62725da8e92309167814dad7aacc0ed8cb2484}"
 QUANT="${SFB_F1_QUANTIZATION:-awq_marlin}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
-HEALTHY_MODEL="${SFB_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
-HEALTHY_REV="${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}"
+HEALTHY_MODEL="${SFB_MODEL:-google/gemma-2-9b-it}"
+HEALTHY_REV="${SFB_HEALTHY_REVISION:-11c9b309abf73637e4b6f9a3fa1e92e615547819}"
 export WORKDIR MODEL REV QUANT PORT GPU HEALTHY_MODEL HEALTHY_REV
 
 mkdir -p "$WORKDIR" /root/.ssh
@@ -30,16 +30,20 @@ export PIP_PROGRESS_BAR=off
 export PYTHONUNBUFFERED=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if ! python3 -c "import vllm" 2>/dev/null; then
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
 # Stop healthy / prior vLLM
-for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid"; do
+for pidfile in "$WORKDIR/vllm_healthy.pid" "$WORKDIR/vllm_f1.pid" "$WORKDIR/vllm_f2.pid" "$WORKDIR/vllm_f4.pid" "$WORKDIR/vllm_f5.pid" "$WORKDIR/vllm_f6.pid"; do
   if [[ -f "$pidfile" ]]; then
     pid="$(cat "$pidfile")"
-    kill "$pid" 2>/dev/null; sleep 2; kill -9 "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
+    sleep 2
+    kill -9 "$pid" 2>/dev/null || true
     rm -f "$pidfile"
   fi
 done
@@ -52,10 +56,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
+model = os.environ.get("MODEL", "hugging-quants/gemma-2-9b-it-AWQ-INT4")
 requested_rev = os.environ.get("REV") or None
 quant = os.environ.get("QUANT", "awq_marlin")
-healthy = os.environ.get("HEALTHY_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+healthy = os.environ.get("HEALTHY_MODEL", "google/gemma-2-9b-it")
 
 pins = {
     "timestamp_utc": datetime.now(timezone.utc).isoformat(),

@@ -45,7 +45,7 @@ strict_failures = _rhs.strict_failures
 expand = _rhs.expand
 load_existing_runs = _rhs.load_existing_runs
 
-DEFAULT_OUT = REPO_ROOT / "results" / "f5-llama31-stability-120x5"
+DEFAULT_OUT = REPO_ROOT / "results" / "f5-gemma2-stability-120x5"
 PREFLIGHT_MANIFEST = "preflight_manifest.json"
 ISOLATION_MANIFEST = "f5_isolation_manifest.json"
 HEALTHY_RESTORE_MANIFEST = "healthy_restore_manifest.json"
@@ -58,7 +58,7 @@ def load_f5_config() -> dict:
 def f5_models(f5_cfg: dict) -> tuple[str, str, str, str]:
     model = os.getenv(
         "SFB_F5_MODEL",
-        f5_cfg.get("model", {}).get("repo", "meta-llama/Llama-3.1-8B-Instruct"),
+        f5_cfg.get("model", {}).get("repo", "google/gemma-2-9b-it"),
     )
     revision = os.getenv(
         "SFB_F5_MODEL_REVISION",
@@ -78,7 +78,7 @@ def f5_models(f5_cfg: dict) -> tuple[str, str, str, str]:
 def load_healthy_baseline() -> dict | None:
     path = (
         REPO_ROOT
-        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2")
         / "campaign_manifest.json"
     )
     if not path.exists():
@@ -89,7 +89,7 @@ def load_healthy_baseline() -> dict | None:
 def healthy_run1_failures() -> set[str]:
     path = (
         REPO_ROOT
-        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2")
         / "run_01_manifest.json"
     )
     if not path.exists():
@@ -113,7 +113,7 @@ def evaluate_f5_preflight(
     h_rate = float(
         (healthy or {}).get("strict_pass_rate_mean")
         or f5_cfg.get("healthy_reference", {}).get("strict_pass_rate_mean")
-        or 0.9666666666666667
+        or 0.885
     )
     h_fails = healthy_run1_failures()
     regressions, recoveries, stable_fail = canary_delta(h_fails, f5_fail_ids)
@@ -374,7 +374,7 @@ def render_markdown(campaign: dict[str, Any], f5_cfg: dict, healthy: dict | None
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
         "> Isolated F5: only vLLM --override-generation-config differs. Weights, tokenizer, and chat template verified identical to healthy.",
-        f"> Compare per-canary jsonl vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
+        f"> Compare per-canary jsonl vs healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
     ]
     if iso:
@@ -745,7 +745,7 @@ def finalize_campaign(
 
     healthy = load_healthy_baseline()
     healthy_ref = os.getenv(
-        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31"
+        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2"
     )
     h_mean = healthy.get("strict_pass_rate_mean") if healthy else None
     f_mean = statistics.mean(strict_rates)
@@ -788,7 +788,7 @@ def finalize_campaign(
         campaign["preflight"] = json.loads(preflight_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_name = f"F5_DECODING_CONFIG_DRIFT_STABILITY_120x{repeats}.md"
+    md_name = f"F5_DECODING_CONFIG_DRIFT_STABILITY_120x{repeats}{os.getenv('SFB_DOC_SUFFIX', '')}.md"
     md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f5_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(

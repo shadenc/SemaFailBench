@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Installs vLLM if missing, pins artifacts, starts healthy server.
 set +e
-MODEL="${SFB_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+MODEL="${SFB_MODEL:-google/gemma-2-9b-it}"
 REV="${SFB_HEALTHY_REVISION:-}"
 export MODEL REV
 PORT="${SFB_PORT:-8000}"
@@ -32,12 +32,14 @@ export PYTHONUNBUFFERED=1
 # https://github.com/vllm-project/vllm/issues/50705
 export VLLM_USE_FLASHINFER_SAMPLER=0
 
-python3 -m pip install -U pip huggingface_hub
+if ! python3 -c "import huggingface_hub" 2>/dev/null; then
+  python3 -m pip install --break-system-packages huggingface_hub
+fi
 if python3 -c "import vllm" 2>/dev/null; then
   echo "vllm already importable"
 else
   echo "Installing vllm via pip (no version invented; whatever this CUDA resolves)"
-  python3 -m pip install vllm
+  python3 -m pip install --break-system-packages vllm
 fi
 
 python3 - <<'PY'

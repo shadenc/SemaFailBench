@@ -46,7 +46,7 @@ strict_failures = _rhs.strict_failures
 expand = _rhs.expand
 load_existing_runs = _rhs.load_existing_runs
 
-DEFAULT_OUT = REPO_ROOT / "results" / "f6-llama31-stability-120x5"
+DEFAULT_OUT = REPO_ROOT / "results" / "f6-gemma2-stability-120x5"
 PREFLIGHT_MANIFEST = "preflight_manifest.json"
 CALIBRATION_MANIFEST = "calibration_manifest.json"
 ISOLATION_MANIFEST = "f6_isolation_manifest.json"
@@ -60,7 +60,7 @@ def load_f6_config() -> dict:
 def f6_models(f6_cfg: dict) -> tuple[str, str, str, str, str]:
     model = os.getenv(
         "SFB_F6_MODEL",
-        f6_cfg.get("model", {}).get("repo", "meta-llama/Llama-3.1-8B-Instruct"),
+        f6_cfg.get("model", {}).get("repo", "google/gemma-2-9b-it"),
     )
     revision = os.getenv(
         "SFB_F6_MODEL_REVISION",
@@ -69,11 +69,11 @@ def f6_models(f6_cfg: dict) -> tuple[str, str, str, str, str]:
     lora_cfg = f6_cfg.get("wrong_lora_adapter") or {}
     lora_module = os.getenv(
         "SFB_F6_LORA_MODULE",
-        lora_cfg.get("module_name", "stale-topic-lora"),
+        lora_cfg.get("module_name", "stale-yt-lora"),
     )
     lora_repo = os.getenv(
         "SFB_F6_LORA_REPO",
-        lora_cfg.get("repo", "nvidia/llama-3.1-nemoguard-8b-topic-control"),
+        lora_cfg.get("repo", "AdamLucek/gemma-2-9b-it-lora-yt-titles"),
     )
     served = os.getenv(
         "SFB_F6_SERVED_MODEL_NAME",
@@ -85,7 +85,7 @@ def f6_models(f6_cfg: dict) -> tuple[str, str, str, str, str]:
 def load_healthy_baseline() -> dict | None:
     path = (
         REPO_ROOT
-        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2")
         / "campaign_manifest.json"
     )
     if not path.exists():
@@ -96,7 +96,7 @@ def load_healthy_baseline() -> dict | None:
 def healthy_run1_failures() -> set[str]:
     path = (
         REPO_ROOT
-        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31")
+        / os.getenv("SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2")
         / "run_01_manifest.json"
     )
     if not path.exists():
@@ -120,7 +120,7 @@ def evaluate_f6_preflight(
     h_rate = float(
         (healthy or {}).get("strict_pass_rate_mean")
         or f6_cfg.get("healthy_reference", {}).get("strict_pass_rate_mean")
-        or 0.9666666666666667
+        or 0.885
     )
     h_fails = healthy_run1_failures()
     regressions, recoveries, stable_fail = canary_delta(h_fails, f6_fail_ids)
@@ -467,7 +467,7 @@ def render_markdown(campaign: dict[str, Any], f6_cfg: dict, healthy: dict | None
     model = campaign.get("model", f6_cfg["model"]["repo"])
     lora_module = campaign.get(
         "lora_module",
-        (f6_cfg.get("wrong_lora_adapter") or {}).get("module_name", "stale-topic-lora"),
+        (f6_cfg.get("wrong_lora_adapter") or {}).get("module_name", "stale-yt-lora"),
     )
     lora_repo = campaign.get(
         "lora_adapter_repo",
@@ -495,7 +495,7 @@ def render_markdown(campaign: dict[str, Any], f6_cfg: dict, healthy: dict | None
         f"**Raw scores:** `{campaign['results_dir']}`",
         "",
         "> Isolated F6: only the mounted LoRA adapter differs. Base weights, tokenizer, chat template, and generation defaults match healthy.",
-        f"> Compare per-canary jsonl vs Llama healthy in `{campaign['healthy_baseline_ref']}/`.",
+        f"> Compare per-canary jsonl vs healthy in `{campaign['healthy_baseline_ref']}/`.",
         "",
     ]
     if iso:
@@ -516,7 +516,7 @@ def render_markdown(campaign: dict[str, Any], f6_cfg: dict, healthy: dict | None
                 f"| dtype identical | {iso.get('dtype_same_as_healthy')} |",
                 f"| LoRA enabled (wrong adapter) | {iso.get('lora_adapter_differs_from_healthy')} |",
                 f"| LoRA module in /v1/models | {iso.get('lora_module_in_api_models')} |",
-                f"| Adapter base matches Llama 3.1 | {iso.get('lora_adapter_base_matches')} |",
+                f"| Adapter base matches healthy model | {iso.get('lora_adapter_base_matches')} |",
                 f"| Adapter rank supported | {iso.get('lora_adapter_rank_supported')} (rank {iso.get('lora_adapter_rank')}) |",
                 "",
                 f"**LoRA adapter hash:** `{iso.get('lora_adapter_config_hash')}`",
@@ -867,7 +867,7 @@ def finalize_campaign(
 
     healthy = load_healthy_baseline()
     healthy_ref = os.getenv(
-        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-llama31"
+        "SFB_HEALTHY_RESULTS_DIR", "results/healthy-stability-120x5-gemma2"
     )
     h_mean = healthy.get("strict_pass_rate_mean") if healthy else None
     f_mean = statistics.mean(strict_rates)
@@ -914,7 +914,7 @@ def finalize_campaign(
         campaign["calibration"] = json.loads(calibration_path.read_text(encoding="utf-8"))
 
     manifest_path.write_text(json.dumps(campaign, indent=2), encoding="utf-8")
-    md_name = f"F6_LORA_ADAPTER_STABILITY_120x{repeats}.md"
+    md_name = f"F6_LORA_ADAPTER_STABILITY_120x{repeats}{os.getenv('SFB_DOC_SUFFIX', '')}.md"
     md_path = REPO_ROOT / "docs" / md_name
     md_path.write_text(render_markdown(campaign, f6_cfg, healthy), encoding="utf-8")
     (out_dir / "README.md").write_text(

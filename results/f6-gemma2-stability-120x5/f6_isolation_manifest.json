@@ -1,0 +1,63 @@
+{
+  "fault": "F6",
+  "deployment_kind": "lora_adapter_mismatch_isolated",
+  "timestamp_utc": "2026-08-16T12:17:53.635169+00:00",
+  "expected_model": "google/gemma-2-9b-it",
+  "expected_model_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+  "expected_lora_module": "stale-yt-lora",
+  "expected_lora_repo": "AdamLucek/gemma-2-9b-it-lora-yt-titles",
+  "weights_unchanged": true,
+  "tokenizer_files_same_as_healthy": true,
+  "chat_template_same_as_healthy": true,
+  "token_ids_same_as_healthy": true,
+  "generation_config_same_as_healthy": true,
+  "quantization_same_as_healthy": true,
+  "dtype_same_as_healthy": true,
+  "lora_enabled": true,
+  "lora_module_served": true,
+  "lora_adapter_differs_from_healthy": true,
+  "lora_module_in_api_models": true,
+  "lora_adapter_repo": "AdamLucek/gemma-2-9b-it-lora-yt-titles",
+  "lora_adapter_config_hash": "55892710d495f675ae166d31165ff9f0850a478dfdd7b437056f3eb15dd2e683",
+  "lora_adapter_base_matches": true,
+  "lora_adapter_rank": 16,
+  "lora_adapter_rank_supported": true,
+  "healthy_lora": "none",
+  "vllm_command": "27689 python3 -m vllm.entrypoints.openai.api_server --model google/gemma-2-9b-it --revision 11c9b309abf73637e4b6f9a3fa1e92e615547819 --served-model-name google/gemma-2-9b-it --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --dtype bfloat16 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager --enable-lora --max-lora-rank 16 --max-loras 1 --lora-modules stale-yt-lora=/workspace/.cache/huggingface/hub/models--AdamLucek--gemma-2-9b-it-lora-yt-titles/snapshots/820f6ab60102e9c0779599e28698fb117c8607a8",
+  "artifact_comparison": {
+    "tokenizer_files_identical": true,
+    "tokenizer_file_diffs": [],
+    "bpe_files_identical": true,
+    "bpe_file_diffs": [],
+    "config_files_identical": true,
+    "config_file_diffs": [],
+    "chat_template_identical": true,
+    "chat_template_hash_healthy": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+    "chat_template_hash_candidate": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+    "bundle_hash_healthy": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d",
+    "bundle_hash_candidate": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d",
+    "bundle_identical": true
+  },
+  "tokenize_comparison": {
+    "token_ids_equal": true,
+    "vocab_len_healthy": 256000,
+    "vocab_len_candidate": 256000,
+    "token_ids_hash_healthy": "fc46cc853f93aa1a03ebd6f5ae484636450870fbc23f0fdb1ee6e7b773b63984",
+    "token_ids_hash_candidate": "fc46cc853f93aa1a03ebd6f5ae484636450870fbc23f0fdb1ee6e7b773b63984"
+  },
+  "api_check": {
+    "ok": true,
+    "timestamp_utc": "2026-08-16T12:17:44.869810+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "google/gemma-2-9b-it",
+      "stale-yt-lora"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 584
+  },
+  "isolated": true,
+  "verdict": "ISOLATED",
+  "notes": "F6 isolated: matched base weights+tokenizer+template+generation; only wrong LoRA adapter differs."
+}

@@ -12,7 +12,7 @@ echo "Bootstrapping healthy vLLM via PTY SSH ($SFB_RUNPOD_SSH)"
 # HF token is read from /workspace/.cache/huggingface/token on the pod (not echoed here).
 {
   printf 'export SFB_PUBKEY=%q\n' "$PUBKEY"
-  printf 'export SFB_MODEL=%q\n' "${SFB_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+  printf 'export SFB_MODEL=%q\n' "${SFB_MODEL:-google/gemma-2-9b-it}"
   printf 'export SFB_HEALTHY_REVISION=%q\n' "${SFB_HEALTHY_REVISION:-}"
   printf 'export SFB_PORT=%q\n' "${SFB_PORT:-8000}"
   printf 'export SFB_HEALTHY_GPU=%q\n' "${SFB_HEALTHY_GPU:-0}"

@@ -1,6 +1,6 @@
 # F6 — Wrong / stale LoRA adapter.
-# Matched Llama 3.1 weights + tokenizer + chat template + generation defaults;
-# wrong domain-specific LoRA adapter mounted and routed in production.
+# Matched Gemma 2 9B IT weights + tokenizer + chat template + generation defaults;
+# wrong-task LoRA adapter mounted and routed in production.
 # Healthy baseline: configs/serving.yaml (no adapter)
 
 name: semafailbench-f6-lora-adapter
@@ -15,36 +15,37 @@ gpu_memory_utilization: 0.90
 dtype: bfloat16
 
 model:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
 tokenizer:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
 
-# Wrong-task adapter: topic-control/safety LoRA left on a general instruct endpoint.
+# Wrong-task adapter: YouTube-title LoRA left on a general instruct endpoint.
 wrong_lora_adapter:
-  module_name: stale-topic-lora
-  repo: nvidia/llama-3.1-nemoguard-8b-topic-control
-  revision: 5ce438e7119061c809e9da819beb5b9287104230
+  module_name: stale-yt-lora
+  repo: AdamLucek/gemma-2-9b-it-lora-yt-titles
+  revision: 820f6ab60102e9c0779599e28698fb117c8607a8
   max_lora_rank: 16
   description: >
-    Realistic ops fault: a topic-control safety LoRA remains mounted on the general Llama-3.1-8B-Instruct
-    serving slot while the gateway routes traffic to the adapter module instead of bare base.
+    Realistic ops fault: a YouTube-title generation LoRA remains mounted on the general
+    Gemma-2-9B-IT serving slot while the gateway routes traffic to the adapter module
+    instead of bare base.
 
-served_model_name: meta-llama/Llama-3.1-8B-Instruct
+served_model_name: google/gemma-2-9b-it
 
 # Benchmark client targets the LoRA module alias (misconfigured production route).
 client_mode:
-  lora_module_name: stale-topic-lora
-  intended_base_model: meta-llama/Llama-3.1-8B-Instruct
+  lora_module_name: stale-yt-lora
+  intended_base_model: google/gemma-2-9b-it
 
 healthy_reference:
-  repo: meta-llama/Llama-3.1-8B-Instruct
-  revision: 0e9e39f249a16976918f6564b8830bc894c89659
+  repo: google/gemma-2-9b-it
+  revision: 11c9b309abf73637e4b6f9a3fa1e92e615547819
   dtype: bfloat16
   lora: none
-  strict_pass_rate_mean: 0.9666666666666667
+  strict_pass_rate_mean: 0.885
   client_decoding:
     temperature: 0.0
     seed: 0

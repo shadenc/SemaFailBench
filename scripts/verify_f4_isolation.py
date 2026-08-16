@@ -81,12 +81,12 @@ def main() -> int:
     parser.add_argument(
         "--healthy-manifest",
         type=Path,
-        default=ROOT / "results" / "f4-retest" / "healthy_restore_manifest.json",
+        default=ROOT / "results" / "f4-gemma2-stability-120x5" / "healthy_restore_manifest.json",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "results" / "f4-retest" / "f4_isolation_manifest.json",
+        default=ROOT / "results" / "f4-gemma2-stability-120x5" / "f4_isolation_manifest.json",
     )
     args = parser.parse_args()
 
@@ -186,7 +186,7 @@ def main() -> int:
         "isolated": isolated,
         "verdict": "ISOLATED" if isolated else "CONFOUNDED",
         "notes": (
-            "F4 isolated: matched weights+tokenizer; vLLM --chat-template points at wrong family template."
+            "F4 isolated: matched weights+tokenizer; vLLM --chat-template points at the official family template with the generation header omitted."
             if isolated
             else "F4 CONFOUNDED — check weights, tokenizer files, or served template."
         ),

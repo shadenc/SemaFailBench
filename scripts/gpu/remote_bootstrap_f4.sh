@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Runs ON the RunPod pod. Stops prior vLLM, starts isolated F4 (wrong chat template only).
 set -euo pipefail
-MODEL="${SFB_F4_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
-REV="${SFB_F4_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-0e9e39f249a16976918f6564b8830bc894c89659}}"
+MODEL="${SFB_F4_MODEL:-google/gemma-2-9b-it}"
+REV="${SFB_F4_MODEL_REVISION:-${SFB_HEALTHY_REVISION:-11c9b309abf73637e4b6f9a3fa1e92e615547819}}"
 TOKENIZER_REPO="${SFB_F4_TOKENIZER:-$MODEL}"
 TOKENIZER_REV="${SFB_F4_TOKENIZER_REVISION:-$REV}"
 TEMPLATE_SOURCE="${SFB_F4_TEMPLATE_SOURCE:-local:no_assistant_gen_prompt}"
-SERVED_NAME="${SFB_F4_SERVED_MODEL_NAME:-meta-llama/Llama-3.1-8B-Instruct}"
+SERVED_NAME="${SFB_F4_SERVED_MODEL_NAME:-google/gemma-2-9b-it}"
 PORT="${SFB_PORT:-8000}"
 GPU="${SFB_HEALTHY_GPU:-0}"
 WORKDIR="${SFB_POD_WORKDIR:-/workspace/semafailbench}"
@@ -58,11 +58,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 work = Path(os.environ.get("WORKDIR", "/workspace/semafailbench"))
-model = os.environ.get("MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+model = os.environ.get("MODEL", "google/gemma-2-9b-it")
 rev = os.environ.get("REV", "")
 tokenizer_repo = os.environ.get("TOKENIZER_REPO", model)
 tokenizer_rev = os.environ.get("TOKENIZER_REV", rev)
-template_source = os.environ.get("TEMPLATE_SOURCE", "local:system_stripped_chatml")
+template_source = os.environ.get("TEMPLATE_SOURCE", "local:no_assistant_gen_prompt")
 local_template = os.environ.get("F4_LOCAL_TEMPLATE", "")
 served = os.environ.get("SERVED_NAME", model)
 
@@ -144,21 +144,42 @@ if not tmpl_wrong:
     raise SystemExit("Could not load wrong chat template")
 
 healthy_tok = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
-sample_messages = [
-    {"role": "system", "content": "You are a careful assistant."},
-    {"role": "user", "content": "Reply with exactly three words."},
-]
+
+def sample_messages_for(tok, template):
+    """Prefer system+user; fold system into user if the template rejects system."""
+    system = "You are a careful assistant."
+    user = "Reply with exactly three words."
+    with_system = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    kwargs = {"tokenize": True, "add_generation_prompt": True}
+    if template:
+        kwargs["chat_template"] = template
+    try:
+        tok.apply_chat_template(with_system, **kwargs)
+        return with_system
+    except Exception:
+        return [{"role": "user", "content": f"{system}\n\n{user}"}]
 
 def ids_with_template(tok, messages, template):
+    kwargs = {"tokenize": True, "add_generation_prompt": True}
     if template:
-        out = tok.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, chat_template=template)
+        kwargs["chat_template"] = template
+    out = tok.apply_chat_template(messages, **kwargs)
+    if hasattr(out, "input_ids"):
+        ids = out.input_ids
+    elif isinstance(out, dict) and "input_ids" in out:
+        ids = out["input_ids"]
     else:
-        out = tok.apply_chat_template(messages, tokenize=True, add_generation_prompt=True)
-    ids = out["input_ids"] if hasattr(out, "__getitem__") else out
+        ids = out
     if hasattr(ids, "tolist"):
         ids = ids.tolist()
-    return list(ids)
+    if ids and isinstance(ids[0], (list, tuple)):
+        ids = ids[0]
+    return [int(x) for x in ids]
 
+sample_messages = sample_messages_for(healthy_tok, tmpl_healthy)
 ids_healthy = ids_with_template(healthy_tok, sample_messages, tmpl_healthy)
 ids_wrong = ids_with_template(healthy_tok, sample_messages, tmpl_wrong)
 
@@ -170,6 +191,7 @@ pins["isolation_probe"] = {
     "token_ids_healthy": ids_healthy[:20],
     "token_ids_wrong_served": ids_wrong[:20],
     "tokenizer_vocab_len": len(healthy_tok),
+    "used_system_role": any(m.get("role") == "system" for m in sample_messages),
 }
 
 (work / "pins_f4.json").write_text(json.dumps(pins, indent=2), encoding="utf-8")
@@ -210,7 +232,7 @@ PY
 echo "Starting isolated F4 vLLM on GPU $GPU port $PORT"
 echo "  model=$MODEL revision=$REV"
 echo "  tokenizer=$TOKENIZER_REPO revision=$TOKENIZER_REV (matched healthy)"
-echo "  chat-template=$WRONG_TEMPLATE_FILE (Llama template missing assistant generation header)"
+echo "  chat-template=$WRONG_TEMPLATE_FILE (official family template missing assistant generation header)"
 echo "  served_model_name=$SERVED_NAME"
 
 nohup env \

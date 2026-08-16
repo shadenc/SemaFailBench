@@ -1,0 +1,18 @@
+{
+  "run_id": "F4-chat-template-mismatch-20260816T114129Z-9a9ea8f0",
+  "condition": "F4-chat-template-mismatch",
+  "condition_regime": "deterministic",
+  "n": 120,
+  "strict_pass_rate": 0.38333333333333336,
+  "tolerant_pass_rate": 0.39166666666666666,
+  "config_hash": "6e58f9f8c72a1535ba763e2ed8ed43903a89d22a406ed27c146a4b599b6cd449",
+  "artifact_hashes": {
+    "canaries_yaml": "1e8896c9449b17a75a0251713bb13bc17bc86bb2fd0b6666b0fdf34018efedd6",
+    "faults_yaml": "e6d31ed7267c5a15f82672c152f5d3d88e02ec78e4a3db114781ab4de162031e",
+    "serving_yaml": "666ab3ccac9c432c45b86c4d5b9ebcc1fc26df34916f7984c1c6f611b1e1735c",
+    "file:serving_f4.yaml": "b477c0b9329854171ebfbbff2f9fd3103ce07f19d80c4f1c37d6050134727ce9",
+    "extra_objects": "8e6282f177eb8ef452a14d79794a0eb9f95da071d324f57d337d58536f440e1b",
+    "bundle": "6e58f9f8c72a1535ba763e2ed8ed43903a89d22a406ed27c146a4b599b6cd449"
+  },
+  "catalog_hash": "4db3a64fa545e7aca2d21436f1e5af90e4e84da30da5f5cfeb404e810cfc51b3"
+}

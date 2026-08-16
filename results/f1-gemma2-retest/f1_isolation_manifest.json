@@ -1,0 +1,95 @@
+{
+  "fault": "F1",
+  "timestamp_utc": "2026-08-16T10:01:42.383824+00:00",
+  "healthy_model": "google/gemma-2-9b-it",
+  "healthy_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+  "fault_model": "hugging-quants/gemma-2-9b-it-AWQ-INT4",
+  "fault_revision": "6e62725da8e92309167814dad7aacc0ed8cb2484",
+  "quantization": "awq_marlin",
+  "model_loaded": true,
+  "quantization_active": true,
+  "architecture_matches": true,
+  "expected_architecture": "gemma2",
+  "tokenizer_same_as_healthy": true,
+  "chat_template_same_as_healthy": true,
+  "token_ids_same_as_healthy": true,
+  "healthy_tokenizer_loaded": true,
+  "other_fault_flags_absent": true,
+  "model_config": {
+    "model_type": "gemma2",
+    "architectures": [
+      "Gemma2ForCausalLM"
+    ],
+    "quantization_config": {
+      "backend": "autoawq",
+      "bits": 4,
+      "do_fuse": false,
+      "exllama_config": null,
+      "fuse_max_seq_len": null,
+      "group_size": 128,
+      "modules_to_fuse": null,
+      "modules_to_not_convert": null,
+      "quant_method": "awq",
+      "version": "gemm",
+      "zero_point": true
+    }
+  },
+  "artifact_comparison": {
+    "tokenizer_files_identical": true,
+    "tokenizer_file_diffs": [],
+    "bpe_files_identical": true,
+    "bpe_file_diffs": [],
+    "config_files_identical": true,
+    "config_file_diffs": [],
+    "chat_template_identical": true,
+    "chat_template_hash_healthy": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+    "chat_template_hash_candidate": "ecd6ae513fe103f0eb62e8ab5bfa8d0fe45c1074fa398b089c93a7e70c15cfd6",
+    "bundle_hash_healthy": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d",
+    "bundle_hash_candidate": "f2b2b80728a6a74195fa889d93bcda91f799c0f32d43b3b5df15913f52a7558d",
+    "bundle_identical": true
+  },
+  "tokenize_comparison": {
+    "token_ids_equal": true,
+    "vocab_len_healthy": 256000,
+    "vocab_len_candidate": 256000,
+    "token_ids_hash_healthy": "fc46cc853f93aa1a03ebd6f5ae484636450870fbc23f0fdb1ee6e7b773b63984",
+    "token_ids_hash_candidate": "fc46cc853f93aa1a03ebd6f5ae484636450870fbc23f0fdb1ee6e7b773b63984"
+  },
+  "pins_f1": {
+    "timestamp_utc": "2026-08-16T10:00:26.162558+00:00",
+    "fault_id": "F1",
+    "fault_name": "Quantization regression",
+    "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+    "model_repo": "hugging-quants/gemma-2-9b-it-AWQ-INT4",
+    "quantization": "awq_marlin",
+    "healthy_reference_repo": "google/gemma-2-9b-it",
+    "healthy_reference_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "port": "8000",
+    "healthy_gpu": "0",
+    "nvidia_smi_before_load": "0, NVIDIA GeForce RTX 5090, 2 MiB, 32607 MiB, 580.126.09",
+    "torch_version": "2.13.0+cu130",
+    "vllm_version": "0.27.1",
+    "transformers_version": "5.15.0",
+    "model_local_path": "/workspace/.cache/huggingface/hub/models--hugging-quants--gemma-2-9b-it-AWQ-INT4/snapshots/6e62725da8e92309167814dad7aacc0ed8cb2484",
+    "tokenizer_repo": "google/gemma-2-9b-it",
+    "tokenizer_revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "tokenizer_local_path": "/workspace/.cache/huggingface/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819",
+    "model_revision": "6e62725da8e92309167814dad7aacc0ed8cb2484",
+    "model_id": "hugging-quants/gemma-2-9b-it-AWQ-INT4",
+    "nvidia_smi_after_load": "0, NVIDIA GeForce RTX 5090, 30136 MiB, 32607 MiB, 0 %"
+  },
+  "api": {
+    "ok": true,
+    "timestamp_utc": "2026-08-16T10:01:40.134226+00:00",
+    "models_status": 200,
+    "model_ids": [
+      "hugging-quants/gemma-2-9b-it-AWQ-INT4"
+    ],
+    "health_status": 200,
+    "metrics_status": 200,
+    "metrics_lines": 582
+  },
+  "vllm_command": "1258 python3 -m vllm.entrypoints.openai.api_server --model hugging-quants/gemma-2-9b-it-AWQ-INT4 --revision 6e62725da8e92309167814dad7aacc0ed8cb2484 --tokenizer /workspace/.cache/huggingface/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819 --quantization awq_marlin --host 127.0.0.1 --port 8000 --tensor-parallel-size 1 --max-model-len 8192 --gpu-memory-utilization 0.90 --enforce-eager",
+  "isolated": true,
+  "verdict": "ISOLATED"
+}

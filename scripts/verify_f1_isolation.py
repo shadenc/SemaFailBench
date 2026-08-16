@@ -71,12 +71,12 @@ def main() -> int:
     parser.add_argument(
         "--healthy-manifest",
         type=Path,
-        default=ROOT / "results" / "f1-llama31-retest" / "healthy_restore_manifest.json",
+        default=ROOT / "results" / "f1-gemma2-retest" / "healthy_restore_manifest.json",
     )
     parser.add_argument(
         "--out",
         type=Path,
-        default=ROOT / "results" / "f1-llama31-retest" / "f1_isolation_manifest.json",
+        default=ROOT / "results" / "f1-gemma2-retest" / "f1_isolation_manifest.json",
     )
     args = parser.parse_args()
 
@@ -132,15 +132,16 @@ def main() -> int:
     api = check_api(base_url)
     proc = ((snapshot_gpu(key, host, port) or {}).get("vllm_process")) or ""
     requested_model = os.getenv(
-        "SFB_F1_MODEL", "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
+        "SFB_F1_MODEL", "hugging-quants/gemma-2-9b-it-AWQ-INT4"
     )
     quant = os.getenv("SFB_F1_QUANTIZATION", "awq_marlin")
+    expected_arch = os.getenv("SFB_F1_ARCH", "gemma2")
     model_loaded = requested_model in proc
     quantization_active = (
         f"--quantization {quant}" in proc
         and bool(config.get("quantization_config"))
     )
-    llama_architecture = config.get("model_type") == "llama"
+    architecture_matches = config.get("model_type") == expected_arch
     healthy_tokenizer_loaded = f"--tokenizer {tokenizer_path}" in proc
     no_other_fault = all(
         flag not in proc
@@ -152,7 +153,7 @@ def main() -> int:
             api.get("ok") is True,
             model_loaded,
             quantization_active,
-            llama_architecture,
+            architecture_matches,
             artifact_cmp["tokenizer_files_identical"],
             artifact_cmp["chat_template_identical"],
             token_cmp["token_ids_equal"],
@@ -171,7 +172,8 @@ def main() -> int:
         "quantization": quant,
         "model_loaded": model_loaded,
         "quantization_active": quantization_active,
-        "llama_architecture": llama_architecture,
+        "architecture_matches": architecture_matches,
+        "expected_architecture": expected_arch,
         "tokenizer_same_as_healthy": artifact_cmp["tokenizer_files_identical"],
         "chat_template_same_as_healthy": artifact_cmp["chat_template_identical"],
         "token_ids_same_as_healthy": token_cmp["token_ids_equal"],
