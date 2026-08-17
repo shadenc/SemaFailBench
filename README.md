@@ -12,12 +12,13 @@ Silent semantic failures in LLM serving: the API stays up, GPU/latency look heal
 
 | What | Open this |
 |---|---|
-| **Pass 1 summary** (150 canaries, 86% strict) | [docs/HEALTHY_PASS1.md](docs/HEALTHY_PASS1.md) |
-| **Which canaries need a fix** (Word — share this) | [docs/PASS1_CANARY_FIX_REVIEW.docx](docs/PASS1_CANARY_FIX_REVIEW.docx) |
-| **Raw scores** (one JSON line per canary) | [results/healthy-pass1/](results/healthy-pass1/) |
+| **All models (comparison + folders)** | [docs/models/README.md](docs/models/README.md) |
+| Qwen 120×20 | [docs/models/qwen2.5-7b-instruct/](docs/models/qwen2.5-7b-instruct/) |
+| Llama 120×5 | [docs/models/llama-3.1-8b-instruct/](docs/models/llama-3.1-8b-instruct/) |
+| Gemma 120×5 | [docs/models/gemma-2-9b-it/](docs/models/gemma-2-9b-it/) |
+| Mistral 120×5 | [docs/models/mistral-7b-instruct-v0.3/](docs/models/mistral-7b-instruct-v0.3/) |
 
-Pass 1 = **one** healthy deterministic run (warmup 5 discarded + 150 measured).  
-**Not done yet:** 20× repeats, stochastic runs, or any fault injection. Review the 21 fails first.
+Same MD design as the original Qwen reports (summary → per-run table → GPU → canary details). Pass 1 / early Qwen baselines remain at [docs/HEALTHY_PASS1.md](docs/HEALTHY_PASS1.md).
 
 ---
 
