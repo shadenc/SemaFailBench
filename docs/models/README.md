@@ -2,7 +2,7 @@
 
 Same report design as Qwen: one Markdown file per campaign, campaign summary, per-run table, GPU envelope, then per-run details. Raw jsonl stays under `results/`.
 
-**One GitHub branch** holds this index: [`alangari/gemma2-9b-it-120x5`](https://github.com/shadenc/SemaFailBench/tree/alangari/gemma2-9b-it-120x5).
+**One GitHub branch** holds this index: [`alangari-gemma2-9b-it-120x5`](https://github.com/shadenc/SemaFailBench/tree/alangari-gemma2-9b-it-120x5) (no slash in the name — GitHub’s file viewer breaks on `alangari/...` URLs).
 
 ## Folders
 
@@ -20,7 +20,7 @@ F3 skipped on every family. Scorer: `calibrated-2026-08-10`.
 1. **Campaign summary** — strict mean, min–max, HTTP 200, stability gate, delta vs healthy.
 2. **Per-run table** — five or twenty rows; same columns as Qwen (strict, latency, GPU).
 3. **GPU envelope** — util / mem / temp / power during inference (infra-silent check).
-4. **Per-run details** — which canaries failed.
+4. **Per-run details** — linked as a `.txt` next to the report (GitHub cannot render thousands of Markdown tables).
 5. **Raw scores** — path at the top of the file (`results/…`).
 
 To compare the same fault across models, open the same filename in two folders, e.g. `F4_CHAT_TEMPLATE_MISMATCH_STABILITY_120x5.md` vs Qwen’s `…_120x20.md`.
